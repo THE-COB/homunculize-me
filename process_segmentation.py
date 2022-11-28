@@ -84,6 +84,28 @@ def get_right_forearm(im):
 	right_forearm[right_inds[:,0], right_inds[:,1]] = 1
 	return right_forearm
 
+def get_left_upper_arm(im):
+	left_front,left_back =  get_body_part_mask(im,2), get_body_part_mask(im,3)
+	right_front,right_back = get_body_part_mask(im,4), get_body_part_mask(im,5)
+	all_upper_arms = np.zeros_like(left_front)
+	all_upper_arms[(left_front==1)|(left_back==1)|(right_front==1)|(right_back==1)] = 1
+	left_upper_arm = np.zeros_like(all_upper_arms)
+	all_upper_arm_edges = edge_detector(all_upper_arms)
+	left_inds, right_inds = segment_clusters_by_x(all_upper_arm_edges)
+	left_upper_arm[left_inds[:,0], left_inds[:,1]] = 1
+	return left_upper_arm
+
+def get_right_upper_arm(im):
+	left_front,left_back =  get_body_part_mask(im,2), get_body_part_mask(im,3)
+	right_front,right_back = get_body_part_mask(im,4), get_body_part_mask(im,5)
+	all_upper_arms = np.zeros_like(left_front)
+	all_upper_arms[(left_front==1)|(left_back==1)|(right_front==1)|(right_back==1)] = 1
+	right_upper_arm = np.zeros_like(all_upper_arms)
+	all_upper_arm_edges = edge_detector(all_upper_arms)
+	left_inds, right_inds = segment_clusters_by_x(all_upper_arm_edges)
+	right_upper_arm[right_inds[:,0], right_inds[:,1]] = 1
+	return right_upper_arm
+
 def get_left_thigh(im):
 	left_fronts = get_body_part_mask(im, 14)
 	left_backs = get_body_part_mask(im, 15)
@@ -100,6 +122,37 @@ def get_right_thigh(im):
 	right_thigh_edges = edge_detector(right_thigh)
 	return right_thigh_edges
 
+def get_left_calf(im):
+	left_fronts = get_body_part_mask(im, 18)
+	left_backs = get_body_part_mask(im, 19)
+	left_thigh = np.zeros_like(left_fronts)
+	left_thigh[(left_fronts==1) | (left_backs==1)] = 1
+	left_thigh_edges = edge_detector(left_thigh)
+	return left_thigh_edges
+
+def get_right_calf(im):
+	right_fronts = get_body_part_mask(im, 20)
+	right_backs = get_body_part_mask(im, 21)
+	right_thigh = np.zeros_like(right_fronts)
+	right_thigh[(right_fronts==1) | (right_backs==1)] = 1
+	right_thigh_edges = edge_detector(right_thigh)
+	return right_thigh_edges
+
+def get_left_foot(im):
+	left_foot = get_body_part_mask(im, 22)
+	left_foot = edge_detector(left_foot)
+	return left_foot
+
+def get_right_foot(im):
+	return edge_detector(get_body_part_mask(im, 23))
+
+def get_torso(im):
+	front = get_body_part_mask(im, 12)
+	back = get_body_part_mask(im, 13)
+	torso = np.zeros_like(front)
+	torso[(front == 1) | (back == 1)] = 1
+	return edge_detector(torso)
+
 if __name__ == '__main__':
 	im = skio.imread("./joe_segmented.png", as_gray=True)
 	utils.show_image(im)
@@ -107,5 +160,11 @@ if __name__ == '__main__':
 	#utils.show_image(left_hand)
 	#right_forearm = get_right_forearm(im)
 	#utils.show_image(right_forearm)
-	right_thigh = get_right_thigh(im)
-	utils.show_image(right_thigh)
+	#right_thigh = get_right_thigh(im)
+	#utils.show_image(right_thigh)
+	#left_calf = get_left_calf(im)
+	#utils.show_image(left_calf)
+	#utils.show_image(get_left_foot(im))
+	#utils.show_image(get_right_foot(im))
+	#utils.show_image(get_torso(im))
+	utils.show_image(get_right_upper_arm(im))
