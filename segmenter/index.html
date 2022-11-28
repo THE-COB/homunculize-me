@@ -11,7 +11,7 @@
 
     
     </head>
-    <img id="image" src="http://127.0.0.1:3000/joe2_dewashed.jpg" crossorigin='anonymous'/>
+    <img id="image" src="http://127.0.0.1:3000/joe_cropped.jpg" crossorigin='anonymous'/>
 
     <canvas id="canvas"></canvas>
 
@@ -37,21 +37,7 @@
             const segmenter = await bodySegmentation.createSegmenter(bodySegmentation.SupportedModels.BodyPix);
             segmentation = await segmenter.segmentPeople(img, {multiSegmentation: false, segmentBodyParts: true, segmentationThreshold: 0.4, outputStride: 16});
             segmentation = segmentation[0]
-            console.log(segmentation)
-            maskImageData = await segmentation.mask.toImageData()
-            maskImageData.data.forEach((el, ind) => {
-                if(ind % 4 === 0){
-                    maskImageData.data[ind] = el*10;
-                }
-                if(ind % 4 === 1){
-                    maskImageData.data[ind] = maskImageData.data[ind-1];
-                }
-                if(ind % 4 === 2){
-                    maskImageData.data[ind] = maskImageData.data[ind-1];
-                }
-            })
-            console.log(maskImageData)
-            imagedata_to_image(maskImageData)
+            
 
             // console.log(segmentation.maskValueToLabel)
             // console.log(segmentation.maskValueToLabel(24))
@@ -72,6 +58,22 @@
             bodySegmentation.drawMask(
                 canvas, img, coloredPartImage, opacity, maskBlurAmount,
                 flipHorizontal);
+
+            console.log(segmentation)
+            maskImageData = await segmentation.mask.toImageData()
+            maskImageData.data.forEach((el, ind) => {
+                if(ind % 4 === 0){
+                    maskImageData.data[ind] = el*10;
+                }
+                if(ind % 4 === 1){
+                    maskImageData.data[ind] = maskImageData.data[ind-1];
+                }
+                if(ind % 4 === 2){
+                    maskImageData.data[ind] = maskImageData.data[ind-1];
+                }
+            })
+            console.log(maskImageData)
+            imagedata_to_image(maskImageData)
         }
         window.addEventListener("load", main, false)
         
