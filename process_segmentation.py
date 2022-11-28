@@ -24,29 +24,45 @@ def get_body_part_mask(im, number):
 	mask_im[np.around(im, decimals=4) == number] = 1
 	return mask_im
 
-def get_left_hand(im):
-	all_lefts = get_body_part_mask(im, 10)
-	#utils.show_image(all_lefts)
-	all_rights = get_body_part_mask(im, 11)
-	#utils.show_image(all_rights)
-	all_hands = np.zeros_like(all_lefts)
-	all_hands[all_lefts == 1] = 1
-	all_hands[all_rights == 1] = 1
-	utils.show_image(all_hands)
-	all_hand_edges = edge_detector(all_hands)
-	left_hand = np.zeros_like(all_hand_edges)
-	all_hand_indices = np.argwhere(all_hand_edges)
+def segment_clusters_by_x(all_part_edges):
+	all_hand_indices = np.argwhere(all_part_edges)
 	hand_indices_sorted = np.sort(all_hand_indices[:,1])
 	hand_indices_indices = np.argsort(all_hand_indices[:,1])
 	diffs_arr = (hand_indices_sorted[1:]-hand_indices_sorted[:-1])
 	max_diff_ind = np.argmax(diffs_arr)
 	left_indices = all_hand_indices[hand_indices_indices[max_diff_ind+1:]]
-	num_indices = len(hand_indices_sorted-max_diff_ind-1)
+	right_indices = all_hand_indices[hand_indices_indices[:max_diff_ind+1]]
+	return left_indices, right_indices
+
+def get_left_hand(im):
+	all_lefts = get_body_part_mask(im, 10)
+	all_rights = get_body_part_mask(im, 11)
+	all_hands = np.zeros_like(all_lefts)
+	all_hands[all_lefts == 1] = 1
+	all_hands[all_rights == 1] = 1
+	utils.show_image(all_hands)
+	left_hand = np.zeros_like(all_hands)
+	all_hand_edges = edge_detector(all_hands)
+	left_indices, right_indices = segment_clusters_by_x(all_hand_edges)
 	left_hand[left_indices[:,0], left_indices[:,1]] = 1
 	return left_hand
+
+def get_right_hand(im):
+	all_lefts = get_body_part_mask(im, 10)
+	all_rights = get_body_part_mask(im, 11)
+	all_hands = np.zeros_like(all_rights)
+	all_hands[all_lefts == 1] = 1
+	all_hands[all_rights == 1] = 1
+	right_hand = np.zeros_like(all_hands)
+	all_hand_edges = edge_detector(all_hands)
+	left_inds, right_inds = segment_clusters_by_x(all_hand_edges)
+	right_hand[right_inds[:,0], right_inds[:,1]] = 1
+	return right_hand
 
 if __name__ == '__main__':
 	im = skio.imread("./joe_segmented.png", as_gray=True)
 	utils.show_image(im)
-	left_hand = get_left_hand(im)
-	utils.show_image(left_hand)
+	#left_hand = get_left_hand(im)
+	#utils.show_image(left_hand)
+	right_hand = get_right_hand(im)
+	utils.show_image(right_hand)
