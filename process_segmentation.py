@@ -84,12 +84,28 @@ def get_right_forearm(im):
 	right_forearm[right_inds[:,0], right_inds[:,1]] = 1
 	return right_forearm
 
+def get_left_thigh(im):
+	left_fronts = get_body_part_mask(im, 14)
+	left_backs = get_body_part_mask(im, 15)
+	left_thigh = np.zeros_like(left_fronts)
+	left_thigh[(left_fronts==1) | (left_backs==1)] = 1
+	left_thigh_edges = edge_detector(left_thigh)
+	return left_thigh_edges
+
+def get_right_thigh(im):
+	right_fronts = get_body_part_mask(im, 16)
+	right_backs = get_body_part_mask(im, 17)
+	right_thigh = np.zeros_like(right_fronts)
+	right_thigh[(right_fronts==1) | (right_backs==1)] = 1
+	right_thigh_edges = edge_detector(right_thigh)
+	return right_thigh_edges
+
 if __name__ == '__main__':
 	im = skio.imread("./joe_segmented.png", as_gray=True)
 	utils.show_image(im)
 	#left_hand = get_left_hand(im)
 	#utils.show_image(left_hand)
-	#right_hand = get_right_hand(im)
-	#utils.show_image(right_hand)
-	right_forearm = get_right_forearm(im)
-	utils.show_image(right_forearm)
+	#right_forearm = get_right_forearm(im)
+	#utils.show_image(right_forearm)
+	right_thigh = get_right_thigh(im)
+	utils.show_image(right_thigh)
