@@ -1,0 +1,82 @@
+<html>
+    <head>
+        <!-- Require the peer dependencies of body-segmentation. -->
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+
+        <!-- You must explicitly require a TF.js backend if you're not using the TF.js union bundle. -->
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-segmentation"></script>
+
+    
+    </head>
+    <img id="image" src="http://127.0.0.1:3000/joe2_dewashed.jpg" crossorigin='anonymous'/>
+
+    <canvas id="canvas"></canvas>
+
+    <canvas id="maskCanvas"></canvas>
+    <img id="maskImage"/>
+
+    <script async type="text/javascript">
+        function imagedata_to_image(imagedata) {
+            var canvas = document.getElementById("maskCanvas");
+            let options = { colorSpace: "srgb" };
+            const ctx = canvas.getContext("2d", options);
+            canvas.width = imagedata.width;
+            canvas.height = imagedata.height;
+            ctx.putImageData(imagedata, 0, 0);
+
+            var image = new Image();
+            image.src = canvas.toDataURL();
+            document.getElementById("maskImage").src = image.src;
+            return image;
+        }
+        async function main(){
+            const img = document.getElementById("image");
+            const segmenter = await bodySegmentation.createSegmenter(bodySegmentation.SupportedModels.BodyPix);
+            segmentation = await segmenter.segmentPeople(img, {multiSegmentation: false, segmentBodyParts: true, segmentationThreshold: 0.4, outputStride: 16});
+            segmentation = segmentation[0]
+            console.log(segmentation)
+            maskImageData = await segmentation.mask.toImageData()
+            maskImageData.data.forEach((el, ind) => {
+                if(ind % 4 === 0){
+                    maskImageData.data[ind] = el*10;
+                }
+                if(ind % 4 === 1){
+                    maskImageData.data[ind] = maskImageData.data[ind-1];
+                }
+                if(ind % 4 === 2){
+                    maskImageData.data[ind] = maskImageData.data[ind-1];
+                }
+            })
+            console.log(maskImageData)
+            imagedata_to_image(maskImageData)
+
+            // console.log(segmentation.maskValueToLabel)
+            // console.log(segmentation.maskValueToLabel(24))
+            // maskTensor = await segmentation.mask.toTensor()
+            // console.log(maskTensor)
+
+            // The colored part image is an rgb image with a corresponding color from the
+            // rainbow colors for each part at each pixel, and black pixels where there is
+            // no part.
+            const coloredPartImage = await bodySegmentation.toColoredMask(segmentation, bodySegmentation.bodyPixMaskValueToRainbowColor, {r: 255, g: 255, b: 255, a: 255});
+            const opacity = 0.7;
+            const flipHorizontal = false;
+            const maskBlurAmount = 0;
+            const canvas = document.getElementById('canvas');
+            // Draw the colored part image on top of the original image onto a canvas.
+            // The colored part image will be drawn semi-transparent, with an opacity of
+            // 0.7, allowing for the original image to be visible under.
+            bodySegmentation.drawMask(
+                canvas, img, coloredPartImage, opacity, maskBlurAmount,
+                flipHorizontal);
+        }
+        window.addEventListener("load", main, false)
+        
+    </script>
+    
+</html>
+
+
