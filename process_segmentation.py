@@ -3,11 +3,21 @@ import skimage.io as skio
 import utils
 import numpy as np
 
+class BodyPoints:
+	def __init__(self, name):
+		self.name = name
+		self.general_points = set()
+		self.border_points = {}
+
+	def add_border(self, points, name):
+		self.border_points[name] = points
+
 def get_body_part_mask(im, number):
 	number = number*10/255
 	mask_im = np.zeros_like(im)
 	mask_im[im == number] = 1
 	utils.show_image(mask_im)
+
 
 if __name__ == '__main__':
 	im = skio.imread("./joe_segmented.png", as_gray=True)
