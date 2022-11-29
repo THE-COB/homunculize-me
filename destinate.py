@@ -14,22 +14,30 @@ print(hand_border.shape)
 
 border_sampled = hand_border[::hand_border.shape[0]//10]
 shared_border = left_hand.get_border("left_forearm")
-shared_border_set = set(shared_border)
-dest_geometry = []
-grad_x, grad_y = np.gradient(joe_segs)
+# shared_border_set = set(shared_border)
+# dest_geometry = []
+# grad_x, grad_y = np.gradient(joe_segs)
 
-for point in border_sampled: 
-	dx = grad_x[point[0]]
-	dy = grad_y[point[1]]
-	if point in shared_border_set: 
+# for point in border_sampled: 
+# 	dx = grad_x[point[0]]
+# 	dy = grad_y[point[1]]
+# 	if point in shared_border_set: 
 
-	else: 
-		dest_geometry.append([point[0] + dx * r, point[1] + dy * r])
-dest_geometry = np.array(dest_geometry)
+# 	else: 
+# 		dest_geometry.append([point[0] + dx * r, point[1] + dy * r])
+# dest_geometry = np.array(dest_geometry)
 
-plt.imshow(joe)
-plt.scatter(border_sampled[:,0], border_sampled[:,1], "r")
-plt.scatter(dest_geometry[:,0], dest_geometry[:,1], "g")
+# plt.imshow(joe)
+# plt.scatter(border_sampled[:,0], border_sampled[:,1], "r")
+# plt.scatter(dest_geometry[:,0], dest_geometry[:,1], "g")
+# plt.show()
+
+im = np.zeros_like(joe_segs)
+im[hand_border[:,0], hand_border[:,1]] = 1
+plt.imshow(im)
 plt.show()
 
-plt.imshow(np.zeros_like(joe_segs))
+im = np.zeros_like(joe_segs)
+im[shared_border[:,0], shared_border[:,1]] = 1
+plt.imshow(im)
+plt.show()
