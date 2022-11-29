@@ -4,6 +4,7 @@ import utils
 import process_segmentation as seg
 import numpy as np
 from scipy import signal
+import time
 
 class BodyPoints:
 	def __init__(self, name, general_points):
@@ -44,3 +45,8 @@ def construct_left_hand(im):
 if __name__ == '__main__':
 	im = skio.imread("./joe_seg_crop2.png", as_gray=True)
 	left_hand_bodypts = construct_left_hand(im)
+	start = time.perf_counter()
+	torso = seg.get_torso(im)
+	left_thigh = seg.get_left_thigh(im)
+	border = find_border(torso, left_thigh)
+	print(time.perf_counter()-start)
