@@ -128,9 +128,18 @@ def construct_torso(im):
 	right_thigh = seg.get_right_thigh(im)
 	left_upper_arm = seg.get_left_upper_arm(im)
 	right_upper_arm = seg.get_right_upper_arm(im)
+	head = seg.get_head(im)
 
-	border_dict = {"left_thigh":left_thigh, "right_thigh":right_thigh, "left_upper_arm":left_upper_arm, "right_upper_arm":right_upper_arm}
+	border_dict = {"left_thigh":left_thigh, "right_thigh":right_thigh, 
+	"left_upper_arm":left_upper_arm, "right_upper_arm":right_upper_arm, "head":head}
 	return construct_part(torso, "torso", border_dict)
+
+def construct_head(im):
+	head = seg.get_head(im)
+	torso = seg.get_torso(im)
+
+	border_dict = {"torso": torso}
+	return construct_part(head, "head", border_dict)
 
 if __name__ == '__main__':
 	im = skio.imread("./joe_seg_crop2.png", as_gray=True)

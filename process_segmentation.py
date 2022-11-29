@@ -145,25 +145,21 @@ def get_torso(im):
 	torso[(front == 1) | (back == 1)] = 1
 	return edge_detector(torso)
 
+def get_head(im):
+	left = get_body_part_mask(im, 0)
+	right = get_body_part_mask(im, 1)
+	face = np.zeros_like(left)
+	face[(left==1)|(right==1)] = 1
+	return edge_detector(face)
+
 if __name__ == '__main__':
 	im = skio.imread("./joe_seg_crop2.png", as_gray=True)
 	utils.show_image(im)
-	#left_hand = get_left_hand(im)
-	# utils.show_image(left_hand)
-	# utils.show_image(get_right_hand(im))
-	# right_forearm = get_right_forearm(im)
-	# utils.show_image(right_forearm)
-	# right_thigh = get_right_thigh(im)
-	# utils.show_image(right_thigh)
-	# left_calf = get_left_calf(im)
-	# utils.show_image(left_calf)
-	# utils.show_image(get_left_foot(im))
-	# utils.show_image(get_right_foot(im))
-	# utils.show_image(get_torso(im))
-	#utils.show_image(get_right_upper_arm(im))
-	left_hand = get_left_hand(im)
-	left_forearm = get_left_forearm(im)
-	hand_arm = np.zeros_like(left_hand)
-	hand_arm[left_forearm==1] = 1
-	hand_arm[left_hand==1] = 0.5
-	utils.show_image(hand_arm)
+	
+	# left_hand = get_left_hand(im)
+	# left_forearm = get_left_forearm(im)
+	# hand_arm = np.zeros_like(left_hand)
+	# hand_arm[left_forearm==1] = 1
+	# hand_arm[left_hand==1] = 0.5
+	# utils.show_image(hand_arm)
+	utils.show_image(get_face(im))
