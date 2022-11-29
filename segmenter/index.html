@@ -11,8 +11,11 @@
 
     
     </head>
-    <img id="image" src="http://127.0.0.1:3000/joe_cropped.jpg" crossorigin='anonymous'/>
-
+    <img id="image" src="http://127.0.0.1:3000/tom_cruise_cropped.jpg" crossorigin='anonymous'/>
+    <br>
+    <button id="segmentButton">SEGMENT</button>
+    <input type="text" name="threshold" id="thresholdInput" placeholder="0.4" />
+    <br>
     <canvas id="canvas"></canvas>
 
     <canvas id="maskCanvas"></canvas>
@@ -29,13 +32,18 @@
 
             var image = new Image();
             image.src = canvas.toDataURL();
-            document.getElementById("maskImage").src = image.src;
             return image;
         }
         async function main(){
             const img = document.getElementById("image");
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
             const segmenter = await bodySegmentation.createSegmenter(bodySegmentation.SupportedModels.BodyPix);
-            segmentation = await segmenter.segmentPeople(img, {multiSegmentation: false, segmentBodyParts: true, segmentationThreshold: 0.4, outputStride: 16});
+            let thresh = parseFloat(document.getElementById("thresholdInput").value)
+
+            segmentation = await segmenter.segmentPeople(img, {multiSegmentation: false, segmentBodyParts: true, segmentationThreshold: thresh, outputStride: 16});
             segmentation = segmentation[0]
             
 
@@ -51,7 +59,6 @@
             const opacity = 0.7;
             const flipHorizontal = false;
             const maskBlurAmount = 0;
-            const canvas = document.getElementById('canvas');
             // Draw the colored part image on top of the original image onto a canvas.
             // The colored part image will be drawn semi-transparent, with an opacity of
             // 0.7, allowing for the original image to be visible under.
@@ -75,7 +82,7 @@
             console.log(maskImageData)
             imagedata_to_image(maskImageData)
         }
-        window.addEventListener("load", main, false)
+        document.getElementById("segmentButton").addEventListener("click", main)
         
     </script>
     
