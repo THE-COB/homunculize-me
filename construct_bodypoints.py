@@ -15,6 +15,9 @@ class BodyPoints:
 	def add_border(self, points, name):
 		self.border_points[name] = points
 
+	def get_border(self, name):
+		return self.border_points[name] 
+
 
 def find_border(e1, e2):
 	bigger, smaller = None, None
