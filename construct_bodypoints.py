@@ -35,56 +35,26 @@ def find_border(e1, e2):
 	border[(smaller_grown==1) & (bigger==1)] = 1
 	return border
 
+def construct_part(part, part_name, border_parts):
+	bdypts = BodyPoints(part_name, np.argwhere(part))
+	for b_name, b_part in border_parts.items():
+		curr_border = find_border(part, b_part)
+		bdypts.add_border(np.argwhere(curr_border), b_name)
+	return bdypts
+
 def construct_left_hand(im):
 	left_hand = seg.get_left_hand(im)
-	left_hand_bodypts = BodyPoints("left_hand", np.argwhere(left_hand))
-
 	left_forearm = seg.get_left_forearm(im)
-	border = find_border(left_hand, left_forearm)
-	left_hand_bodypts.add_border(np.argwhere(border), "left_forearm")
-	return left_hand_bodypts
+	border_dict = {"left_forearm", left_forearm}
+	return construct_part(left_hand, "left_hand", border_dict)
 
 def construct_right_hand(im):
 	right_hand = seg.get_right_hand(im)
-	right_hand_bodypts = BodyPoints("right_hand", np.argwhere(right_hand))
-
 	right_forearm = seg.get_right_forearm(im)
-	border = find_border(right_hand, right_forearm)
-	right_hand_bodypts.add_border(np.argwhere(border), "right_forearm")
-	return right_hand_bodypts
-
-def construct_left_forearm(im):
-	left_forearm = seg.get_left_forearm(im)
-	bodypts = BodyPoints("left_forearm", np.argwhere(left_forearm))
-
-	left_hand = seg.get_left_hand(im)
-	hand_border = find_border(left_hand, left_forearm)
-	bodypts.add_border(np.argwhere(hand_border), "left_hand")
-
-	upper_arm = seg.get_left_upper_arm(im)
-	upper_arm_border = find_border(upper_arm, left_forearm)
-	bodypts.add_border(np.argwhere(upper_arm_border), "left_upper_arm")
-	return bodypts
-
-def construct_right_forearm(im):
-	right_forearm = seg.get_right_forearm(im)
-	bodypts = BodyPoints("right_forearm", np.argwhere(right_forearm))
-
-	right_hand = seg.get_right_hand(im)
-	hand_border = find_border(right_hand, right_forearm)
-	bodypts.add_border(np.argwhere(hand_border), "right_hand")
-
-	upper_arm = seg.get_right_upper_arm(im)
-	upper_arm_border = find_border(upper_arm, right_forearm)
-	bodypts.add_border(np.argwhere(upper_arm_border), "right_upper_arm")
-	return bodypts
-
+	border_dict = {"right_forearm", right_forearm}
+	return construct_part(right_hand, "right_hand", border_dict)
 
 if __name__ == '__main__':
 	im = skio.imread("./joe_seg_crop2.png", as_gray=True)
 	left_hand_bodypts = construct_left_hand(im)
-	start = time.perf_counter()
-	torso = seg.get_torso(im)
-	left_thigh = seg.get_left_thigh(im)
-	border = find_border(torso, left_thigh)
-	print(time.perf_counter()-start)
+
