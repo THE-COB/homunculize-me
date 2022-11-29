@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import skimage.io as skio
 import utils
 import numpy as np
+from skimage.segmentation import find_boundaries
 
 def edge_detector(mask_im):
 	gx, gy = np.gradient(mask_im)
