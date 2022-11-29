@@ -45,14 +45,28 @@ def construct_part(part, part_name, border_parts):
 def construct_left_hand(im):
 	left_hand = seg.get_left_hand(im)
 	left_forearm = seg.get_left_forearm(im)
-	border_dict = {"left_forearm", left_forearm}
+	border_dict = {"left_forearm": left_forearm}
 	return construct_part(left_hand, "left_hand", border_dict)
 
 def construct_right_hand(im):
 	right_hand = seg.get_right_hand(im)
 	right_forearm = seg.get_right_forearm(im)
-	border_dict = {"right_forearm", right_forearm}
+	border_dict = {"right_forearm": right_forearm}
 	return construct_part(right_hand, "right_hand", border_dict)
+
+def construct_left_forearm(im):
+	left_forearm = seg.get_left_forearm(im)
+	left_hand = seg.get_left_hand(im)
+	left_upper_arm = seg.get_left_upper_arm(im)
+	border_dict = {"left_hand": left_hand, "left_upper_arm": left_upper_arm}
+	return construct_part(left_forearm, "left_forearm", border_dict)
+
+def construct_right_forearm(im):
+	right_forearm = seg.get_right_forearm(im)
+	right_hand = seg.get_right_hand(im)
+	right_upper_arm = seg.get_right_upper_arm(im)
+	border_dict = {"right_hand": right_hand, "right_upper_arm": right_upper_arm}
+	return construct_part(right_forearm, "right_forearm". border_dict)
 
 if __name__ == '__main__':
 	im = skio.imread("./joe_seg_crop2.png", as_gray=True)
