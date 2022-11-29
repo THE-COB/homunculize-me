@@ -3,15 +3,6 @@ import skimage.io as skio
 import utils
 import numpy as np
 
-class BodyPoints:
-	def __init__(self, name, general_points):
-		self.name = name
-		self.general_points = general_points
-		self.border_points = {}
-
-	def add_border(self, points, name):
-		self.border_points[name] = points
-
 def edge_detector(mask_im):
 	gx, gy = np.gradient(mask_im)
 	temp_edge = gy*gy + gx*gx
@@ -156,7 +147,7 @@ def get_torso(im):
 if __name__ == '__main__':
 	im = skio.imread("./joe_seg_crop2.png", as_gray=True)
 	utils.show_image(im)
-	left_hand = get_left_hand(im)
+	#left_hand = get_left_hand(im)
 	# utils.show_image(left_hand)
 	# utils.show_image(get_right_hand(im))
 	# right_forearm = get_right_forearm(im)
@@ -168,4 +159,10 @@ if __name__ == '__main__':
 	# utils.show_image(get_left_foot(im))
 	# utils.show_image(get_right_foot(im))
 	# utils.show_image(get_torso(im))
-	utils.show_image(get_right_upper_arm(im))
+	#utils.show_image(get_right_upper_arm(im))
+	left_hand = get_left_hand(im)
+	left_forearm = get_left_forearm(im)
+	hand_arm = np.zeros_like(left_hand)
+	hand_arm[left_forearm==1] = 1
+	hand_arm[left_hand==1] = 0.5
+	utils.show_image(hand_arm)
