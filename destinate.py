@@ -1,16 +1,35 @@
-from construct_bodypoints import construct_left_hand
+import construct_bodypoints as bpt
+import matplotlib.pyplot as plt
 import skimage.io as skio 
 import triangulate as tri
 import numpy as np
 
+r = 25 
+
 joe = skio.imread("joe2.jpg")
-joe_segs = skio.imread("joe_seg_crop2.png")
-left_hand = construct_left_hand(joe_segs)
+joe_segs = skio.imread("joe_seg_crop2.png", as_gray=True)
+left_hand = bpt.construct_left_hand(joe_segs)
+hand_border = left_hand.general_points
+print(hand_border.shape)
 
-im = np.zeros_like(joe)
-im[left_hand] = 1
-plt.imshow(im)
+border_sampled = hand_border[::hand_border.shape[0]//10]
+shared_border = left_hand.get_border("left_forearm")
+shared_border_set = set(shared_border)
+dest_geometry = []
+grad_x, grad_y = np.gradient(joe_segs)
 
-im = np.zeros_like(joe)
-im[left_hand.bo] = 1
-plt.imshow(im)
+for point in border_sampled: 
+	dx = grad_x[point[0]]
+	dy = grad_y[point[1]]
+	if point in shared_border_set: 
+
+	else: 
+		dest_geometry.append([point[0] + dx * r, point[1] + dy * r])
+dest_geometry = np.array(dest_geometry)
+
+plt.imshow(joe)
+plt.scatter(border_sampled[:,0], border_sampled[:,1], "r")
+plt.scatter(dest_geometry[:,0], dest_geometry[:,1], "g")
+plt.show()
+
+plt.imshow(np.zeros_like(joe_segs))
