@@ -68,7 +68,72 @@ def construct_right_forearm(im):
 	border_dict = {"right_hand": right_hand, "right_upper_arm": right_upper_arm}
 	return construct_part(right_forearm, "right_forearm". border_dict)
 
+def construct_left_upper_arm(im):
+	left_upper_arm = seg.get_left_upper_arm(im)
+	left_forearm = seg.get_left_forearm(im)
+	torso = seg.get_torso(im)
+	border_dict = {"left_forearm": left_forearm, "torso": torso}
+	return construct_part(left_upper_arm, "left_upper_arm", border_dict)
+
+def construct_right_upper_arm(im):
+	right_upper_arm = seg.get_right_upper_arm(im)
+	right_forearm = seg.get_right_forearm(im)
+	torso = seg.get_torso(im)
+	border_dict = {"right_forearm": right_forearm, "torso": torso}
+	return construct_part(right_upper_arm, "right_upper_arm", border_dict)
+
+def construct_left_foot(im):
+	left_foot = seg.get_left_foot(im)
+	left_calf = seg.get_left_calf(im)
+	border_dict = {"left_calf": left_calf}
+	return construct_part(left_foot, "left_foot", border_dict)
+
+def construct_right_foot(im):
+	right_foot = seg.get_right_foot(im)
+	right_calf = seg.get_right_calf(im)
+	border_dict = {"right_calf": right_calf}
+	return construct_part(right_foot, "right_foot", border_dict)
+
+def construct_left_calf(im):
+	left_calf = seg.get_left_calf(im)
+	left_foot = seg.get_left_foot(im)
+	left_thigh = seg.get_left_thigh(im)
+	border_dict = {"left_foot": left_foot, "left_thigh": left_thigh}
+	return construct_part(left_calf, "left_calf", border_dict)
+
+def construct_right_calf(im):
+	right_calf = seg.get_right_calf(im)
+	right_foot = seg.get_right_foot(im)
+	right_thigh = seg.get_right_thigh(im)
+	border_dict = {"right_foot": right_foot, "right_thigh": right_thigh}
+	return construct_part(right_calf, "right_calf", border_dict)
+
+def construct_left_thigh(im):
+	left_thigh = seg.get_left_thigh(im)
+	left_calf = seg.get_left_calf(im)
+	torso = seg.get_torso(im)
+	border_dict = {"left_calf": left_calf, "torso": torso}
+	return construct_part(left_thigh, "left_thigh", border_dict)
+
+def construct_right_thigh(im):
+	right_thigh = seg.get_right_thigh(im)
+	right_calf = seg.get_right_calf(im)
+	torso = seg.get_torso(im)
+	border_dict = {"right_calf": right_calf, "torso": torso}
+	return construct_part(right_thigh, "right_thigh", border_dict)
+
+def construct_torso(im):
+	torso = seg.get_torso(im)
+	left_thigh = seg.get_left_thigh(im)
+	right_thigh = seg.get_right_thigh(im)
+	left_upper_arm = seg.get_left_upper_arm(im)
+	right_upper_arm = seg.get_right_upper_arm(im)
+
+	border_dict = {"left_thigh":left_thigh, "right_thigh":right_thigh, "left_upper_arm":left_upper_arm, "right_upper_arm":right_upper_arm}
+	return construct_part(torso, "torso", border_dict)
+
 if __name__ == '__main__':
 	im = skio.imread("./joe_seg_crop2.png", as_gray=True)
 	left_hand_bodypts = construct_left_hand(im)
+	torso_bodypts = construct_torso(im)
 
