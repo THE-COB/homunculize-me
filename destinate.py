@@ -6,6 +6,9 @@ import numpy as np
 from scipy import signal
 from scipy.ndimage import binary_fill_holes 
 import skimage
+import transform_midway as trans
+import cv2
+import utils
 
 from scipy.interpolate import RectBivariateSpline
 
@@ -22,7 +25,7 @@ def get_end_points(border, shared_border):
 	end_points = np.argwhere(bpt.find_border(shared_border, nonshared_border))
 	return [end_points[0], end_points[-1]]
 
-r_1 = 100
+r_1 = 50
 r_2 = 10 
 
 joe = skio.imread("joe2.jpg")
@@ -52,7 +55,7 @@ for point in border_sampled:
 	target_geometry.append([point[0] - dx * r_1, point[1] - dy * r_1])
 
 for point in end_points: 
-	target_geometry.append([point[0] - dx * r_2, point[1] - dy * r_2])
+	target_geometry.append([point[0], point[1]])
 target_geometry = np.array(target_geometry)
 
 plt.imshow(joe_segs)
@@ -60,8 +63,14 @@ plt.scatter(start_geometry[:,1], start_geometry[:,0], s=5, c="r")
 plt.scatter(target_geometry[:,1], target_geometry[:,0], s=5, c="b")
 plt.show()
 
-triangulation = tri.triangulate_scipy(start_geometry)
-print(triangulation)
+pts1 = np.fliplr(start_geometry)
+pts2 = np.fliplr(target_geometry)
+pts1 = np.vstack((pts1, np.array([[0, 0], [0, joe.shape[0]-1], [joe.shape[1]-1, 0], [joe.shape[1]-1, joe.shape[0]-1]])))
+pts2 = np.vstack((pts2, np.array([[0, 0], [0, joe.shape[0]-1], [joe.shape[1]-1, 0], [joe.shape[1]-1, joe.shape[0]-1]])))
+triangulation = tri.triangulate_scipy(pts2)
+warped = trans.get_midshape_interp(joe/255, pts1, pts2, triangulation)
+utils.show_image(joe)
+utils.show_image(warped)
 
 # TESTING FOR ROHAN
 # im = np.zeros_like(joe_segs)
