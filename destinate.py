@@ -28,8 +28,8 @@ def get_end_points(border, shared_border):
 r_1 = 50
 r_2 = 10 
 
-joe = skio.imread("joe2.jpg")
-joe_segs = skio.imread("joe_seg_crop2.png", as_gray=True)
+joe = skio.imread("tom_cruise.jpg")
+joe_segs = skio.imread("tom_segmentation.png", as_gray=True)
 left_hand = bpt.construct_left_hand(joe_segs)
 border = left_hand.general_points
 shared_border = left_hand.get_border("left_forearm")
@@ -38,7 +38,7 @@ border_im = pts_to_im(joe_segs, border)
 shared_border_im = pts_to_im(joe_segs, shared_border)
 nonshared_border = im_to_pts(border_im - shared_border_im)
 
-border_sampled = nonshared_border[::nonshared_border.shape[0]//15]
+border_sampled = nonshared_border[::nonshared_border.shape[0]//12]
 end_points = get_end_points(border_im, shared_border_im)
 start_geometry = np.vstack((border_sampled, np.array(end_points)))
 
@@ -68,6 +68,7 @@ pts2 = np.fliplr(target_geometry)
 pts1 = np.vstack((pts1, np.array([[0, 0], [0, joe.shape[0]-1], [joe.shape[1]-1, 0], [joe.shape[1]-1, joe.shape[0]-1]])))
 pts2 = np.vstack((pts2, np.array([[0, 0], [0, joe.shape[0]-1], [joe.shape[1]-1, 0], [joe.shape[1]-1, joe.shape[0]-1]])))
 triangulation = tri.triangulate_scipy(pts2)
+tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
 warped = trans.get_midshape_interp(joe/255, pts1, pts2, triangulation)
 utils.show_image(joe)
 utils.show_image(warped)
