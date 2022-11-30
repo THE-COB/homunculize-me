@@ -62,7 +62,7 @@ def single_seg_geometry(im, border, shared_border, r):
 	border_im = pts_to_im(im, border)
 	shared_border_im = pts_to_im(im, shared_border)
 	nonshared_border = im_to_pts(border_im - shared_border_im)
-	start_geometry = nonshared_border[::nonshared_border.shape[0]//14]
+	start_geometry = nonshared_border[1::nonshared_border.shape[0]//9]
 
 	target_geometry = []
 	filled_border = binary_fill_holes(border_im).astype(int)
@@ -95,9 +95,9 @@ def single_seg_geometry(im, border, shared_border, r):
 	return start_geometry, target_geometry
 
 r_1 = 50
-r_2 = 1
+r_2 = 8
 
-joe = skio.imread("tom_cruise.jpg")
+joe = skio.imread("tom_cruise_cropped.jpg")
 joe_segs = skio.imread("tom_segmentation.png", as_gray=True)
 left_hand = bpt.construct_left_hand(joe_segs)
 border = left_hand.general_points
@@ -112,13 +112,13 @@ start, target = single_seg_geometry(joe_segs, border, shared_border, -r_2)
 start_geometry = np.vstack((start, start_geometry))
 target_geometry = np.vstack((target, target_geometry))
 
-right_hand = bpt.construct_right_hand(joe_segs)
-border = right_hand.general_points
-shared_border = right_hand.get_border("right_forearm")
-start, target  = single_seg_geometry(joe_segs, border, shared_border, r_1)
+# right_hand = bpt.construct_right_hand(joe_segs)
+# border = right_hand.general_points
+# shared_border = right_hand.get_border("right_forearm")
+# start, target  = single_seg_geometry(joe_segs, border, shared_border, r_1)
 
-start_geometry = np.vstack((start, start_geometry))
-target_geometry = np.vstack((target, target_geometry))
+# start_geometry = np.vstack((start, start_geometry))
+# target_geometry = np.vstack((target, target_geometry))
 
 plt.imshow(joe_segs)
 plt.scatter(start_geometry[:,1], start_geometry[:,0], s=5, c="r")
@@ -165,7 +165,7 @@ def blend_stack(im1, im2, mask, N, kernal, sigma, lap_mult=2, blur_mult=1, mask_
 	im1_blur_set = blur_mult*blurred_mask*im1_blurred
 	im2_blur_set = blur_mult*(1-blurred_mask)*im2_blurred
 	blended = im1_blur_set + im1_lap_set + im2_blur_set + im2_lap_set
-	utils.show_image(blended)
+	#utils.show_image(blended)
 	if N == 0:
 		return blended
 	return blended + blend_stack(im1_blurred, im2_blurred, blurred_mask, N-1, kernal, sigma)
@@ -173,7 +173,7 @@ def blend_stack(im1, im2, mask, N, kernal, sigma, lap_mult=2, blur_mult=1, mask_
 mask = np.zeros_like(warped)
 mask[warped != 0] = 1
 utils.show_image(mask)
-blended = blend_stack(warped_corners, joe/255, mask, 4, 75, 35, lap_mult=3, blur_mult=1, mask_kernal=55, mask_sigma=25)
+blended = blend_stack(warped_corners, joe/255, mask, 4, 55, 35, lap_mult=3, blur_mult=1, mask_kernal=45, mask_sigma=25)
 utils.show_image(blended/5)
 
 # TESTING FOR ROHAN
