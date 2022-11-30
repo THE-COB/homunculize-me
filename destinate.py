@@ -58,9 +58,6 @@ def get_geometries(joe_segs, border, shared_border, r_1, r_2):
 	target_geometry = np.vstack((target_geometry, invariant_point))
 	return start_geometry, target_geometry
 
-def get_geometries(im, border, r):
-	return
-
 r_1 = 50
 r_2 = 10 
 
@@ -78,15 +75,54 @@ plt.show()
 
 pts1 = np.fliplr(start_geometry)
 pts2 = np.fliplr(target_geometry)
-pts1 = np.vstack((pts1, np.array([[0, 0], [0, joe.shape[0]-1], [joe.shape[1]-1, 0], [joe.shape[1]-1, joe.shape[0]-1]])))
-pts2 = np.vstack((pts2, np.array([[0, 0], [0, joe.shape[0]-1], [joe.shape[1]-1, 0], [joe.shape[1]-1, joe.shape[0]-1]])))
+pts1_corners = np.vstack((pts1, np.array([[0, 0], [0, joe.shape[0]-1], [joe.shape[1]-1, 0], [joe.shape[1]-1, joe.shape[0]-1]])))
+pts2_corners = np.vstack((pts2, np.array([[0, 0], [0, joe.shape[0]-1], [joe.shape[1]-1, 0], [joe.shape[1]-1, joe.shape[0]-1]])))
 triangulation = tri.triangulate_scipy(pts2)
+triangulation_corners = tri.triangulate_scipy(pts2_corners)
 
-tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
+#tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
 
 warped = trans.get_midshape_interp(joe/255, pts1, pts2, triangulation)
+warped_corners = trans.get_midshape_interp(joe/255, pts1_corners, pts2_corners, triangulation_corners)
 utils.show_image(joe)
 utils.show_image(warped)
+#tri.show_triangles_ind(warped, triangulation, pts2)
+
+
+# Just blurring
+def apply_gaussian(im, kernal, sigma):
+	g_kernal = cv2.getGaussianKernel(kernal, sigma)
+	g_kernal = g_kernal @ g_kernal.T
+	im_new = [0,0,0]
+	for i in range(3):
+		#im_new[i] = signal.convolve2d(im[:,:,i], g_kernal, mode="same")
+		#im_new[i] = skimage.filters.gaussian(filled_border, sigma=(3, 3), truncate=2)
+		im_new[i] = cv2.GaussianBlur(im[:,:,i], (kernal, kernal), sigma)
+	return np.dstack(im_new)
+
+# Laplacian stack blending from previous project
+def blend_stack(im1, im2, mask, N, kernal, sigma, lap_mult=2, blur_mult=1, mask_kernal=55, mask_sigma=5):
+	im1_blurred = apply_gaussian(im1, kernal, sigma)
+	im2_blurred = apply_gaussian(im2, kernal, sigma)
+	im1_lapped = im1 - im1_blurred
+	im2_lapped = im2 - im2_blurred
+	print("N ==", N)
+	blurred_mask = apply_gaussian(mask, mask_kernal, mask_sigma)
+	im1_lap_set = lap_mult*blurred_mask*im1_lapped
+	im2_lap_set = lap_mult*(1-blurred_mask)*im2_lapped
+	im1_blur_set = blur_mult*blurred_mask*im1_blurred
+	im2_blur_set = blur_mult*(1-blurred_mask)*im2_blurred
+	blended = im1_blur_set + im1_lap_set + im2_blur_set + im2_lap_set
+	utils.show_image(blended)
+	if N == 0:
+		return blended
+	return blended + blend_stack(im1_blurred, im2_blurred, blurred_mask, N-1, kernal, sigma)
+
+mask = np.zeros_like(warped)
+mask[warped != 0] = 1
+utils.show_image(mask)
+blended = blend_stack(warped_corners, joe/255, mask, 4, 75, 35, lap_mult=3, blur_mult=1, mask_kernal=55, mask_sigma=25)
+utils.show_image(blended/5)
 
 # TESTING FOR ROHAN
 # im = np.zeros_like(joe_segs)
