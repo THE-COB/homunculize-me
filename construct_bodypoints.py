@@ -15,6 +15,9 @@ class BodyPoints:
 	def add_border(self, points, name):
 		self.border_points[name] = points
 
+	def get_borders(self):
+		return self.border_points.keys()
+
 	def get_border(self, name):
 		return self.border_points[name] 
 
@@ -66,7 +69,7 @@ def construct_right_forearm(im):
 	right_hand = seg.get_right_hand(im)
 	right_upper_arm = seg.get_right_upper_arm(im)
 	border_dict = {"right_hand": right_hand, "right_upper_arm": right_upper_arm}
-	return construct_part(right_forearm, "right_forearm". border_dict)
+	return construct_part(right_forearm, "right_forearm", border_dict)
 
 def construct_left_upper_arm(im):
 	left_upper_arm = seg.get_left_upper_arm(im)
