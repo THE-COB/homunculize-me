@@ -18,11 +18,16 @@ def pts_to_im(im, pts):
 def im_to_pts(im):
 	return np.argwhere(im)
 
-def single_seg_geometry(im, border, shared_border, r):
+def get_end_points(border, shared_border):
+	nonshared_border = border - shared_border
+	end_points = np.argwhere(bpt.find_border(shared_border, nonshared_border))
+	return [end_points[0], end_points[-1]]
+
+def single_seg_geometry(im, border, shared_border, r, sparsity, keep_endpoints=False):
 	border_im = pts_to_im(im, border)
 	shared_border_im = pts_to_im(im, shared_border)
 	nonshared_border = im_to_pts(border_im - shared_border_im)
-	start_geometry = nonshared_border[::nonshared_border.shape[0]//5]
+	start_geometry = nonshared_border[::int(nonshared_border.shape[0]/sparsity)]
 
 	target_geometry = []
 	filled_border = binary_fill_holes(border_im).astype(int)
@@ -44,7 +49,13 @@ def single_seg_geometry(im, border, shared_border, r):
 
 	start_geometry = start_geometry[np.array(mags)]
 	target_geometry = np.array(target_geometry)
-	
+
+	if keep_endpoints:
+		print("adding endpoints")
+		end_points = np.array(get_end_points(border_im, shared_border_im))
+		start_geometry = np.vstack((start_geometry, end_points))
+		target_geometry = np.vstack((target_geometry, end_points))
+		
 	# ADD AVG TO START
 	invariant_point = np.mean(start_geometry, axis=0)
 	start_geometry = np.vstack((start_geometry, invariant_point))
@@ -54,7 +65,7 @@ def single_seg_geometry(im, border, shared_border, r):
 	target_geometry = np.vstack((target_geometry, invariant_point))
 	return start_geometry, target_geometry
 
-def homunculize_parts(parts, rs, im, im_seg): 
+def warp(parts, rs, im, im_seg, final, s): 
 	for i in range(len(parts)):
 		part = parts[i]
 		print(part.name)
@@ -68,9 +79,9 @@ def homunculize_parts(parts, rs, im, im_seg):
 			else: 
 				shared_borders = np.vstack((shared_borders, part.get_border(adjacent_parts[j])))
 		if i == 0: 
-			start_geometry, target_geometry = single_seg_geometry(im_seg, part_border, shared_borders, r)
+			start_geometry, target_geometry = single_seg_geometry(im_seg, part_border, shared_borders, r, sparsity=s, keep_endpoints=True)
 		else: 
-			start, target = single_seg_geometry(im_seg, part_border, shared_borders, r)
+			start, target = single_seg_geometry(im_seg, part_border, shared_borders, r, sparsity=s)
 			start_geometry = np.vstack((start, start_geometry))
 			target_geometry = np.vstack((target, target_geometry))
 	
@@ -87,43 +98,71 @@ def homunculize_parts(parts, rs, im, im_seg):
 	# pts2 = np.vstack((pts2, corners))
 	triangulation = tri.triangulate_scipy(pts2)
 
-	#tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
-
+	tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
 	warped = trans.get_midshape_interp(im/255, pts1, pts2, triangulation)
-	utils.show_image(im)
-	utils.show_image(warped)
 	return warped
 
-joe = skio.imread("joe2.jpg")
-segs = skio.imread("joe_seg_crop2.png", as_gray=True)
-final = np.zeros_like(joe).astype(float)
+def homunculize_parts(parts, rs, im, im_seg, final, s=11): 
+	done = False
+	while not done:
+		try:
+			warped = warp(parts, rs, im, im_seg, final, s)
+		except np.linalg.LinAlgError as err:
+			if 'Singular matrix' in str(err):
+				print("ruh roh singular:", s)
+				s -= 1
+		else:
+			done = True
 
-parts = [bpt.construct_torso(segs), 
-		bpt.construct_left_thigh(segs), 
-		bpt.construct_right_thigh(segs), 
-		bpt.construct_left_calf(segs),
-		bpt.construct_right_calf(segs),
-		bpt.construct_left_foot(segs),
-		bpt.construct_right_foot(segs)]
-rs = [-15 for _ in parts]
-final += homunculize_parts(parts, rs, joe, segs)
-utils.show_image(final)
+	utils.show_image(im)
+	utils.show_image(warped)
 
-parts = [bpt.construct_left_hand(segs), 
+	indices = np.argwhere(warped)
+	final[indices[:,0], indices[:,1]] = warped[indices[:,0], indices[:,1]]
+	return final
+
+# joe = skio.imread("joe2.jpg")
+# segs = skio.imread("joe_seg_crop2.png", as_gray=True)
+
+joe = skio.imread("tom_cruise_cropped.jpg")
+segs = skio.imread("tom_segmentation.png", as_gray=True)
+
+final = np.ones_like(joe).astype(float)
+
+parts = [bpt.construct_torso(segs),
+		bpt.construct_right_forearm(segs), 
+		bpt.construct_right_upper_arm(segs),
 		bpt.construct_left_forearm(segs), 
 		bpt.construct_left_upper_arm(segs)]
-rs = [50, -8, -8] 
-final += homunculize_parts(parts, rs, joe, segs)
+rs = [-15 for _ in parts]
+final = homunculize_parts(parts, rs, joe, segs, final, s=8)
 utils.show_image(final)
 
-parts = [bpt.construct_right_hand(segs), 
-		bpt.construct_right_forearm(segs), 
-		bpt.construct_right_upper_arm(segs)]
-rs = [50, -8, -8] 
-final += homunculize_parts(parts, rs, joe, segs)
+parts = [bpt.construct_left_thigh(segs), 
+		bpt.construct_left_calf(segs),
+		bpt.construct_left_foot(segs)]
+rs = [-15 for _ in parts]
+final = homunculize_parts(parts, rs, joe, segs, final, s=8)
+utils.show_image(final)
+
+parts = [bpt.construct_right_thigh(segs), 
+		bpt.construct_right_calf(segs),
+		bpt.construct_right_foot(segs)]
+rs = [-15 for _ in parts]
+final = homunculize_parts(parts, rs, joe, segs, final, s=8)
 utils.show_image(final)
 
 parts = [bpt.construct_head(segs)]
 rs = [50] 
-final += homunculize_parts(parts, rs, joe, segs)
+final = homunculize_parts(parts, rs, joe, segs, final)
+utils.show_image(final)
+
+parts = [bpt.construct_left_hand(segs)]
+rs = [50 for _ in parts]
+final = homunculize_parts(parts, rs, joe, segs, final, s=8)
+utils.show_image(final)
+
+parts = [bpt.construct_right_hand(segs)]
+rs = [50 for _ in parts]
+final = homunculize_parts(parts, rs, joe, segs, final, s=8)
 utils.show_image(final)
