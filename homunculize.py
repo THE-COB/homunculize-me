@@ -76,7 +76,7 @@ def apply_gaussian(im, kernal, sigma):
 	return np.dstack(im_new)
 
 # Laplacian stack blending from previous project
-def blend_stack(im1, im2, mask, N, kernal, sigma, lap_mult=2, blur_mult=1, mask_kernal=55, mask_sigma=5):
+def blend_stack(im1, im2, mask, N, kernal, sigma, lap_mult=3, blur_mult=1, mask_kernal=55, mask_sigma=5):
 	im1_blurred = apply_gaussian(im1, kernal, sigma)
 	im2_blurred = apply_gaussian(im2, kernal, sigma)
 	im1_lapped = im1 - im1_blurred
@@ -121,20 +121,23 @@ def warp(parts, rs, im, im_seg, final, s):
 	pts1 = np.fliplr(start_geometry)
 	pts2 = np.fliplr(target_geometry)
 
-	# corners = np.array([[0, 0], [0, im.shape[0]-1], [im.shape[1]-1, 0], [im.shape[1]-1, im.shape[0]-1]])
-	# pts1 = np.vstack((pts1, corners))
-	# pts2 = np.vstack((pts2, corners))
+	corners = np.array([[0, 0], [0, im.shape[0]-1], [im.shape[1]-1, 0], [im.shape[1]-1, im.shape[0]-1]])
+	pts1_corners = np.vstack((pts1, corners))
+	pts2_corners = np.vstack((pts2, corners))
+
 	triangulation = tri.triangulate_scipy(pts2)
+	triangulation_corners = tri.triangulate_scipy(pts2_corners)
 
 	# tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
 	warped = trans.get_midshape_interp(im/255, pts1, pts2, triangulation)
-	return warped
+	warped_corners = trans.get_midshape_interp(im/255, pts1_corners, pts2_corners, triangulation_corners)
+	return warped, warped_corners
 
 def homunculize_parts(parts, rs, im, im_seg, final, s=11): 
 	done = False
 	while not done:
 		try:
-			warped = warp(parts, rs, im, im_seg, final, s)
+			warped, warped_corners = warp(parts, rs, im, im_seg, final, s)
 		except np.linalg.LinAlgError as err:
 			if 'Singular matrix' in str(err):
 				print("ruh roh singular:", s)
@@ -151,12 +154,12 @@ def homunculize_parts(parts, rs, im, im_seg, final, s=11):
 
 	mask = np.zeros_like(final)
 	mask[warped!=0] = 1
-	final = blend_stack(warped, final, mask, 4, 55, 35, lap_mult=3, blur_mult=1, mask_kernal=45, mask_sigma=25)/5
+	final = blend_stack(warped_corners, final, mask, 3, 45, 15, lap_mult=4, blur_mult=1, mask_kernal=25, mask_sigma=5)/4
 	return final
 
-joe = skio.imread("cropped_photos/tom_cruise_cropped.jpg")
+joe = skio.imread("cropped_photos/yarden_cropped.jpg")
 # joe = skio.imread("original_photos/tom_cruise.jpg")
-segs = skio.imread("segmentations/tom_segmentation.png", as_gray=True)
+segs = skio.imread("segmentations/yarden_segmentation.png", as_gray=True)
 
 final = np.ones_like(joe).astype(float)
 
@@ -196,8 +199,9 @@ parts = [bpt.construct_right_forearm(segs),
 rs = [-15, 75]
 final = homunculize_parts(parts, rs, joe, segs, final, s=7)
 
-parts = [bpt.construct_head(segs)]
-rs = [75]
-final = homunculize_parts(parts, rs, joe, segs, final, s=50)
+#parts = [bpt.construct_head(segs)]
+#rs = [75]
+#final = homunculize_parts(parts, rs, joe, segs, final, s=50)
+utils.show_image(joe)
 utils.show_image(final)
 utils.save_im("tom_poop.jpg", final)
