@@ -29,7 +29,11 @@ def get_basic_basis(pts):
 def compute_affine(tri1_pts, tri2_pts):
 	t1 = get_basic_basis(tri1_pts)
 	t2 = get_basic_basis(tri2_pts)
-	full_transform = t2 @ np.linalg.inv(t1)
+	try:
+		full_transform = t2 @ np.linalg.inv(t1)
+	except np.linalg.LinAlgError as err:
+			if 'Singular matrix' in str(err):
+				full_transform = np.eye(3)
 	return full_transform
 
 # Returns an image warped into new points

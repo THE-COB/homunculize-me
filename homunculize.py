@@ -51,7 +51,6 @@ def single_seg_geometry(im, border, shared_border, r, sparsity, keep_endpoints=F
 	target_geometry = np.array(target_geometry)
 
 	if keep_endpoints:
-		print("adding endpoints")
 		end_points = np.array(get_end_points(border_im, shared_border_im))
 		start_geometry = np.vstack((start_geometry, end_points))
 		target_geometry = np.vstack((target_geometry, end_points))
@@ -64,6 +63,35 @@ def single_seg_geometry(im, border, shared_border, r, sparsity, keep_endpoints=F
 	invariant_point = np.mean(target_geometry, axis=0)
 	target_geometry = np.vstack((target_geometry, invariant_point))
 	return start_geometry, target_geometry
+
+# Just blurring
+def apply_gaussian(im, kernal, sigma):
+	g_kernal = cv2.getGaussianKernel(kernal, sigma)
+	g_kernal = g_kernal @ g_kernal.T
+	im_new = [0,0,0]
+	for i in range(3):
+		#im_new[i] = signal.convolve2d(im[:,:,i], g_kernal, mode="same")
+		#im_new[i] = skimage.filters.gaussian(filled_border, sigma=(3, 3), truncate=2)
+		im_new[i] = cv2.GaussianBlur(im[:,:,i], (kernal, kernal), sigma)
+	return np.dstack(im_new)
+
+# Laplacian stack blending from previous project
+def blend_stack(im1, im2, mask, N, kernal, sigma, lap_mult=2, blur_mult=1, mask_kernal=55, mask_sigma=5):
+	im1_blurred = apply_gaussian(im1, kernal, sigma)
+	im2_blurred = apply_gaussian(im2, kernal, sigma)
+	im1_lapped = im1 - im1_blurred
+	im2_lapped = im2 - im2_blurred
+	print("N ==", N)
+	blurred_mask = apply_gaussian(mask, mask_kernal, mask_sigma)
+	im1_lap_set = lap_mult*blurred_mask*im1_lapped
+	im2_lap_set = lap_mult*(1-blurred_mask)*im2_lapped
+	im1_blur_set = blur_mult*blurred_mask*im1_blurred
+	im2_blur_set = blur_mult*(1-blurred_mask)*im2_blurred
+	blended = im1_blur_set + im1_lap_set + im2_blur_set + im2_lap_set
+	#utils.show_image(blended)
+	if N == 0:
+		return blended
+	return blended + blend_stack(im1_blurred, im2_blurred, blurred_mask, N-1, kernal, sigma)
 
 def warp(parts, rs, im, im_seg, final, s): 
 	for i in range(len(parts)):
@@ -85,10 +113,10 @@ def warp(parts, rs, im, im_seg, final, s):
 			start_geometry = np.vstack((start, start_geometry))
 			target_geometry = np.vstack((target, target_geometry))
 	
-	plt.imshow(im_seg)
-	plt.scatter(start_geometry[:,1], start_geometry[:,0], s=5, c="r")
-	plt.scatter(target_geometry[:,1], target_geometry[:,0], s=5, c="b")
-	plt.show()
+	# plt.imshow(im_seg)
+	# plt.scatter(start_geometry[:,1], start_geometry[:,0], s=5, c="r")
+	# plt.scatter(target_geometry[:,1], target_geometry[:,0], s=5, c="b")
+	# plt.show()
 
 	pts1 = np.fliplr(start_geometry)
 	pts2 = np.fliplr(target_geometry)
@@ -98,7 +126,7 @@ def warp(parts, rs, im, im_seg, final, s):
 	# pts2 = np.vstack((pts2, corners))
 	triangulation = tri.triangulate_scipy(pts2)
 
-	tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
+	# tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
 	warped = trans.get_midshape_interp(im/255, pts1, pts2, triangulation)
 	return warped
 
@@ -114,18 +142,21 @@ def homunculize_parts(parts, rs, im, im_seg, final, s=11):
 		else:
 			done = True
 
-	utils.show_image(im)
-	utils.show_image(warped)
+	# utils.show_image(im)
+	# utils.show_image(warped)
 
-	indices = np.argwhere(warped)
-	final[indices[:,0], indices[:,1]] = warped[indices[:,0], indices[:,1]]
+	# indices = np.argwhere(warped)
+	# final[indices[:,0], indices[:,1]] = warped[indices[:,0], indices[:,1]]
+	# return final
+
+	mask = np.zeros_like(final)
+	mask[warped!=0] = 1
+	final = blend_stack(warped, final, mask, 4, 55, 35, lap_mult=3, blur_mult=1, mask_kernal=45, mask_sigma=25)/5
 	return final
 
-# joe = skio.imread("joe2.jpg")
-# segs = skio.imread("joe_seg_crop2.png", as_gray=True)
-
-joe = skio.imread("tom_cruise_cropped.jpg")
-segs = skio.imread("tom_segmentation.png", as_gray=True)
+joe = skio.imread("cropped_photos/tom_cruise_cropped.jpg")
+# joe = skio.imread("original_photos/tom_cruise.jpg")
+segs = skio.imread("segmentations/tom_segmentation.png", as_gray=True)
 
 final = np.ones_like(joe).astype(float)
 
@@ -133,8 +164,13 @@ parts = [bpt.construct_torso(segs),
 		bpt.construct_right_forearm(segs), 
 		bpt.construct_right_upper_arm(segs),
 		bpt.construct_left_forearm(segs), 
-		bpt.construct_left_upper_arm(segs)]
+		bpt.construct_left_upper_arm(segs),
+		bpt.construct_left_thigh(segs),
+		bpt.construct_right_thigh(segs), 
+		bpt.construct_head(segs)]
 rs = [-15 for _ in parts]
+rs[0] = -30
+rs[-1] = 50
 final = homunculize_parts(parts, rs, joe, segs, final, s=8)
 utils.show_image(final)
 
@@ -142,27 +178,26 @@ parts = [bpt.construct_left_thigh(segs),
 		bpt.construct_left_calf(segs),
 		bpt.construct_left_foot(segs)]
 rs = [-15 for _ in parts]
-final = homunculize_parts(parts, rs, joe, segs, final, s=8)
-utils.show_image(final)
+final = homunculize_parts(parts, rs, joe, segs, final, s=12)
 
 parts = [bpt.construct_right_thigh(segs), 
 		bpt.construct_right_calf(segs),
 		bpt.construct_right_foot(segs)]
 rs = [-15 for _ in parts]
-final = homunculize_parts(parts, rs, joe, segs, final, s=8)
-utils.show_image(final)
+final = homunculize_parts(parts, rs, joe, segs, final, s=12)
+
+parts = [bpt.construct_left_forearm(segs), 
+		bpt.construct_left_hand(segs)]
+rs = [-15, 75]
+final = homunculize_parts(parts, rs, joe, segs, final, s=7)
+
+parts = [bpt.construct_right_forearm(segs), 
+		bpt.construct_right_hand(segs)]
+rs = [-15, 75]
+final = homunculize_parts(parts, rs, joe, segs, final, s=7)
 
 parts = [bpt.construct_head(segs)]
-rs = [50] 
-final = homunculize_parts(parts, rs, joe, segs, final)
+rs = [75]
+final = homunculize_parts(parts, rs, joe, segs, final, s=50)
 utils.show_image(final)
-
-parts = [bpt.construct_left_hand(segs)]
-rs = [50 for _ in parts]
-final = homunculize_parts(parts, rs, joe, segs, final, s=8)
-utils.show_image(final)
-
-parts = [bpt.construct_right_hand(segs)]
-rs = [50 for _ in parts]
-final = homunculize_parts(parts, rs, joe, segs, final, s=8)
-utils.show_image(final)
+utils.save_im("tom_poop.jpg", final)
