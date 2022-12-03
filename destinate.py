@@ -11,6 +11,7 @@ import cv2
 import utils
 
 from scipy.interpolate import RectBivariateSpline
+from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
 def pts_to_im(im, pts):
 	new_im = np.zeros_like(im)
@@ -63,6 +64,13 @@ def single_seg_geometry(im, border, shared_border, r):
 	shared_border_im = pts_to_im(im, shared_border)
 	nonshared_border = im_to_pts(border_im - shared_border_im)
 	start_geometry = nonshared_border[1::nonshared_border.shape[0]//9]
+	hull = ConvexHull(nonshared_border)
+	# plt.imshow(joe_segs)
+	# for simplex in hull.simplices:
+	# 	plt.plot(border[simplex, 1], border[simplex, 0])
+	# plt.show()
+	print(hull.vertices)
+	start_geometry = nonshared_border[hull.vertices]
 
 	target_geometry = []
 	filled_border = binary_fill_holes(border_im).astype(int)
@@ -97,9 +105,10 @@ def single_seg_geometry(im, border, shared_border, r):
 r_1 = 50
 r_2 = 8
 
-joe = skio.imread("tom_cruise_cropped.jpg")
-joe_segs = skio.imread("tom_segmentation.png", as_gray=True)
+joe = skio.imread("cropped_photos/tom_cruise_cropped.jpg")
+joe_segs = skio.imread("segmentations/tom_segmentation.png", as_gray=True)
 left_hand = bpt.construct_left_hand(joe_segs)
+
 border = left_hand.general_points
 shared_border = left_hand.get_border("left_forearm")
 # start_geometry, target_geometry = get_geometries(joe_segs, border, shared_border, r_1, r_2)

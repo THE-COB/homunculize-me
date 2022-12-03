@@ -9,6 +9,7 @@ import skimage
 import transform_midway as trans
 import cv2
 import utils
+from scipy.spatial import ConvexHull, convex_hull_plot_2d
 
 def pts_to_im(im, pts):
 	new_im = np.zeros_like(im)
@@ -28,6 +29,8 @@ def single_seg_geometry(im, border, shared_border, r, sparsity, keep_endpoints=F
 	shared_border_im = pts_to_im(im, shared_border)
 	nonshared_border = im_to_pts(border_im - shared_border_im)
 	start_geometry = nonshared_border[::int(nonshared_border.shape[0]/sparsity)]
+	hull = ConvexHull(nonshared_border)
+	start_geometry = nonshared_border[hull.vertices]
 
 	target_geometry = []
 	filled_border = binary_fill_holes(border_im).astype(int)
@@ -169,8 +172,9 @@ parts = [bpt.construct_torso(segs),
 		bpt.construct_left_forearm(segs), 
 		bpt.construct_left_upper_arm(segs),
 		bpt.construct_left_thigh(segs),
-		bpt.construct_right_thigh(segs), 
-		bpt.construct_head(segs)]
+		bpt.construct_right_thigh(segs),
+		bpt.construct_head(segs)
+		]
 rs = [-15 for _ in parts]
 rs[0] = -30
 rs[-1] = 50
@@ -181,12 +185,14 @@ parts = [bpt.construct_left_thigh(segs),
 		bpt.construct_left_calf(segs),
 		bpt.construct_left_foot(segs)]
 rs = [-15 for _ in parts]
+rs[-1] = 20
 final = homunculize_parts(parts, rs, joe, segs, final, s=12)
 
 parts = [bpt.construct_right_thigh(segs), 
 		bpt.construct_right_calf(segs),
 		bpt.construct_right_foot(segs)]
 rs = [-15 for _ in parts]
+rs[-1] = 20
 final = homunculize_parts(parts, rs, joe, segs, final, s=12)
 
 parts = [bpt.construct_left_forearm(segs), 
@@ -199,9 +205,10 @@ parts = [bpt.construct_right_forearm(segs),
 rs = [-15, 75]
 final = homunculize_parts(parts, rs, joe, segs, final, s=7)
 
-#parts = [bpt.construct_head(segs)]
-#rs = [75]
-#final = homunculize_parts(parts, rs, joe, segs, final, s=50)
+# head_bpt = bpt.construct_head(segs)
+# parts = [head_bpt]
+# rs = [75]
+# final = homunculize_parts(parts, rs, joe, segs, final, s=50)
 utils.show_image(joe)
 utils.show_image(final)
 utils.save_im("tom_poop.jpg", final)
