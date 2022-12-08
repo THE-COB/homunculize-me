@@ -160,9 +160,10 @@ def homunculize_parts(parts, rs, im, im_seg, final, s=11):
 	final = blend_stack(warped_corners, final, mask, 3, 45, 15, lap_mult=4, blur_mult=1, mask_kernal=25, mask_sigma=5)/4
 	return final
 
-joe = skio.imread("cropped_photos/yarden_cropped.jpg")
+joe_name = "yarden"
+joe = skio.imread(f"cropped_photos/{joe_name}_cropped.jpg")
 # joe = skio.imread("original_photos/tom_cruise.jpg")
-segs = skio.imread("segmentations/yarden_segmentation.png", as_gray=True)
+segs = skio.imread(f"segmentations/{joe_name}_segmentation.png", as_gray=True)
 
 final = np.ones_like(joe).astype(float)
 
@@ -211,4 +212,4 @@ final = homunculize_parts(parts, rs, joe, segs, final, s=7)
 # final = homunculize_parts(parts, rs, joe, segs, final, s=50)
 utils.show_image(joe)
 utils.show_image(final)
-utils.save_im("tom_poop.jpg", final)
+utils.save_im(f"{joe_name}_homunculized.jpg", final)
