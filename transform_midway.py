@@ -5,6 +5,8 @@ import skimage.io as skio
 import triangulate as my_tri
 from skimage.draw import polygon
 from scipy import interpolate
+import cv2
+import utils
 
 # Method to apply a function to each channel of a color image
 def apply_channels(im, func):
@@ -70,6 +72,27 @@ def get_midshape_interp(im, pts, new_pts, tri):
 	warped_im[all_tri_pts[1],all_tri_pts[0],1] = inverse_warp(im[:,:,1])
 	warped_im[all_tri_pts[1],all_tri_pts[0],2] = inverse_warp(im[:,:,2])
 
+	#interp = interpolator2d(x, y, )
+	return warped_im
+
+# Returns an image warped into new points
+def warp_fast(im, pts, new_pts, tri):
+	im_shape_2d = (im.shape[0], im.shape[1])
+	warped_im = np.zeros(im.shape)
+	all_tri_pts = None
+	all_old_pts = None
+	all_actual_old_pts = None
+	for t in tri.simplices:
+		# Compute affine transformation
+		aff = compute_affine(pts[t], new_pts[t])
+		rr, cc = polygon(new_pts[t][:,0], new_pts[t][:,1])
+		tri_pts = np.vstack((rr, cc, np.ones((len(rr),))))
+		rr, cc = polygon(pts[t][:,0], pts[t][:,1])
+		new_im = np.zeros_like(im)
+		new_im[cc,rr,:] = im[cc,rr,:]
+
+		warped_im += cv2.warpPerspective(new_im, aff, (im.shape[1], im.shape[0]))
+	
 	#interp = interpolator2d(x, y, )
 	return warped_im
 
