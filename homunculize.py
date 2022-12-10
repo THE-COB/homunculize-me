@@ -168,7 +168,7 @@ def homunculize_parts(parts, rs, im, im_seg, final, s=11):
 	return final
 
 if __name__ == "__main__":
-	joe_name = "yarden"
+	joe_name = "olivia"
 	joe = skio.imread(f"cropped_photos/{joe_name}_cropped.jpg")/255
 	# joe = skio.imread("original_photos/tom_cruise.jpg")
 	segs = skio.imread(f"segmentations/{joe_name}_segmentation.png", as_gray=True)
@@ -200,34 +200,40 @@ if __name__ == "__main__":
 			bpt.construct_left_forearm(segs), 
 			bpt.construct_left_upper_arm(segs),
 			bpt.construct_left_thigh(segs),
-			bpt.construct_right_thigh(segs)]
-	rs = [-15 for _ in parts]
-	rs[0] = -30
-	final = homunculize_parts(parts, rs, joe, segs, final, s=8)
-	utils.show_image(final)
-
-	parts = [bpt.construct_left_thigh(segs), 
+			bpt.construct_right_thigh(segs),
 			bpt.construct_left_calf(segs),
-			bpt.construct_left_foot(segs)]
-	rs = [-15 for _ in parts]
-	rs[-1] = 20
-	final = homunculize_parts(parts, rs, joe, segs, final, s=12)
-
-	parts = [bpt.construct_right_thigh(segs), 
+			bpt.construct_left_foot(segs),
 			bpt.construct_right_calf(segs),
 			bpt.construct_right_foot(segs)]
 	rs = [-15 for _ in parts]
-	rs[-1] = 20
-	final = homunculize_parts(parts, rs, joe, segs, final, s=12)
+	rs[0] = -30
+	rs[-1] = 25
+	rs[-3] = 25
+	final = homunculize_parts(parts, rs, joe, segs, final, s=8)
+	utils.show_image(final)
+
+	# parts = [bpt.construct_left_thigh(segs), 
+	# 		bpt.construct_left_calf(segs),
+	# 		bpt.construct_left_foot(segs)]
+	# rs = [-15 for _ in parts]
+	# rs[-1] = 20
+	# final = homunculize_parts(parts, rs, joe, segs, final, s=12)
+
+	# parts = [bpt.construct_right_thigh(segs), 
+	# 		bpt.construct_right_calf(segs),
+	# 		bpt.construct_right_foot(segs)]
+	# rs = [-15 for _ in parts]
+	# rs[-1] = 20
+	# final = homunculize_parts(parts, rs, joe, segs, final, s=12)
 
 	parts = [bpt.construct_left_forearm(segs), 
 			bpt.construct_left_hand(segs)]
-	rs = [-15, 75]
+	rs = [-15, 100]
 	final = homunculize_parts(parts, rs, joe, segs, final, s=7)
 
 	parts = [bpt.construct_right_forearm(segs), 
 			bpt.construct_right_hand(segs)]
-	rs = [-15, 75]
+	rs = [-15, 100]
 	final = homunculize_parts(parts, rs, joe, segs, final, s=7)
 
 	idx = np.argwhere(full_face_warped)
