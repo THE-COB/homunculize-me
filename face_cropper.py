@@ -27,10 +27,11 @@ def crop_head(head, im, delta=10):
 	return cropped_im, np.array([top, left, bottom-top, right-left])
 
 if __name__ == '__main__':
-	joe = skio.imread("cropped_photos/yarden_cropped.jpg")
-	joe_segs = skio.imread("segmentations/yarden_segmentation.png", as_gray=True)
+	name = "olivia"
+	joe = skio.imread(f"cropped_photos/{name}_cropped.jpg")
+	joe_segs = skio.imread(f"segmentations/{name}_segmentation.png", as_gray=True)
 
 	head = bpt.construct_head(joe_segs).general_points
 	crop, bbox = crop_head(head, joe)
-	skio.imsave("faces/yarden_face.jpg", crop)
-	np.save("faces/yarden_bbox.npy", bbox)
+	skio.imsave(f"faces/{name}_face.jpg", crop)
+	np.save(f"faces/{name}_bbox.npy", bbox)
