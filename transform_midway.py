@@ -34,8 +34,8 @@ def compute_affine(tri1_pts, tri2_pts):
 	try:
 		full_transform = t2 @ np.linalg.inv(t1)
 	except np.linalg.LinAlgError as err:
-			if 'Singular matrix' in str(err):
-				full_transform = np.eye(3)
+		if 'Singular matrix' in str(err):
+			full_transform = np.eye(3)
 	return full_transform
 
 # Returns an image warped into new points
@@ -53,7 +53,10 @@ def get_midshape_interp(im, pts, new_pts, tri):
 		rr, cc = polygon(pts[t][:,0], pts[t][:,1])
 		actual_old_pts = np.vstack((rr, cc))
 		# Inverse warping of points
-		old_pts = (np.linalg.inv(aff) @ tri_pts)[:-1]
+		try:
+			old_pts = (np.linalg.inv(aff) @ tri_pts)[:-1]
+		except np.linalg.LinAlgError as err:
+			old_pts = tri_pts[:-1]
 		tri_pts = tri_pts[:-1]
 		if all_tri_pts is None:
 			all_tri_pts = tri_pts

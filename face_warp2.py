@@ -22,10 +22,14 @@ def warp_face_geom(im, pts1, pts2):
 	warped_corners = warped#trans.get_midshape_interp(im, pts1_corners, pts2_corners, triangulation_corners)
 	return warped, warped_corners
 
-def circle_transform(center, rad, face_points, warp_func=np.sqrt):
-	centered_points = face_points-center
+def get_spherical_coords(center, points):
+	centered_points = points-center
 	rads = (centered_points[:,0]**2 + centered_points[:,1]**2)**0.5
 	thetas = np.arctan2(centered_points[:,0], centered_points[:,1])
+	return rads, thetas
+
+def circle_transform(center, rad, face_points, warp_func=np.sqrt):
+	rads, thetas = get_spherical_coords(center, face_points)
 	rads_norm = rads/rad
 	warped_rads_norm = np.where(rads_norm < 1, warp_func(rads_norm), rads_norm)
 	warped_rads = warped_rads_norm * rad
@@ -33,6 +37,17 @@ def circle_transform(center, rad, face_points, warp_func=np.sqrt):
 	warped_carts = np.zeros_like(face_points)
 	warped_carts[:,0] = warped_rads*np.sin(thetas)#*mean_rad**0.5
 	warped_carts[:,1] = warped_rads*np.cos(thetas)#*mean_rad**0.5
+	warped_carts += center
+
+	return warped_carts
+
+def magnify(points, r):
+	center = np.mean(points, axis=0)
+	rads, thetas = get_spherical_coords(center, points)
+
+	warped_carts = np.zeros_like(points)
+	warped_carts[:,0] = rads*r*np.sin(thetas)#*mean_rad**0.5
+	warped_carts[:,1] = rads*r*np.cos(thetas)#*mean_rad**0.5
 	warped_carts += center
 
 	return warped_carts
@@ -60,11 +75,12 @@ class CircleWarper:
 			print(f"transformed {curr_part['name']}")
 
 		face_points_denorm = face_points_norm*np.array([im.shape[1]-1, im.shape[0]-1])
-		final_warp, final_warp_corners = warp_face_geom(im, face_points, face_points_denorm)
+		face_points_magnified = magnify(face_points_denorm, 3)
+		final_warp, final_warp_corners = warp_face_geom(im, face_points, face_points_magnified)
 		return final_warp, final_warp_corners
 
 if __name__ == "__main__":
-	name = "angjoo"
+	name = "tom"
 	joe = skio.imread(f"cropped_photos/{name}_cropped.jpg")/255
 	face_points = fp.get_face_points(name)
 
