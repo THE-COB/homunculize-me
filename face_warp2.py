@@ -18,8 +18,8 @@ def warp_face_geom(im, pts1, pts2):
 	triangulation_corners = tri.triangulate_scipy(pts2_corners)
 
 	# tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
-	warped = trans.get_midshape_interp(im/255, pts1, pts2, triangulation)
-	warped_corners = trans.get_midshape_interp(im/255, pts1_corners, pts2_corners, triangulation_corners)
+	warped = trans.get_midshape_interp(im, pts1, pts2, triangulation)
+	warped_corners = warped#trans.get_midshape_interp(im, pts1_corners, pts2_corners, triangulation_corners)
 	return warped, warped_corners
 
 def circle_transform(center, rad, face_points, warp_func=np.sqrt):
@@ -64,14 +64,14 @@ class CircleWarper:
 		return final_warp, final_warp_corners
 
 if __name__ == "__main__":
-	name = "olivia"
-	joe = skio.imread(f"cropped_photos/{name}_cropped.jpg")
+	name = "angjoo"
+	joe = skio.imread(f"cropped_photos/{name}_cropped.jpg")/255
 	face_points = fp.get_face_points(name)
 
 	part_sets = [
 	{"name": "left_eye", "edge_index": 54, "center_index": (153,159), "warp_func": lambda r: r**0.5},
 	{"name": "right_eye", "edge_index": 284, "center_index": (386,380), "warp_func": lambda r: r**0.5},
-	{"name": "mouth", "edge_index": 361, "center_index": (13,14), "warp_func": lambda r: (0.01**r-1)/(0.01-1)},
+	{"name": "mouth", "edge_index": 361, "center_index": (13,14), "warp_func": lambda r: (0.05**r-1)/(0.05-1)},
 	]
 	full_face_warped, full_face_warped_corners = CircleWarper.pipeline_transform(joe, part_sets, face_points)
 

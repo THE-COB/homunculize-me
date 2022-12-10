@@ -1,4 +1,5 @@
 import construct_bodypoints as bpt
+from construct_bodypoints import BodyPoints
 import matplotlib.pyplot as plt
 import skimage.io as skio 
 import triangulate as tri
@@ -10,6 +11,9 @@ import transform_midway as trans
 import cv2
 import utils
 from scipy.spatial import ConvexHull, convex_hull_plot_2d
+import face_warp2 as face
+from face_warp2 import CircleWarper
+import face_point_parser as fp
 
 def pts_to_im(im, pts):
 	new_im = np.zeros_like(im)
@@ -26,7 +30,10 @@ def get_end_points(border, shared_border):
 
 def single_seg_geometry(im, border, shared_border, r, sparsity, keep_endpoints=False):
 	border_im = pts_to_im(im, border)
-	shared_border_im = pts_to_im(im, shared_border)
+	try:
+		shared_border_im = pts_to_im(im, shared_border)
+	except:
+		shared_border_im = np.zeros_like(im)
 	nonshared_border = im_to_pts(border_im - shared_border_im)
 	start_geometry = nonshared_border[::int(nonshared_border.shape[0]/sparsity)]
 	hull = ConvexHull(nonshared_border)
@@ -53,7 +60,7 @@ def single_seg_geometry(im, border, shared_border, r, sparsity, keep_endpoints=F
 	start_geometry = start_geometry[np.array(mags)]
 	target_geometry = np.array(target_geometry)
 
-	if keep_endpoints:
+	if keep_endpoints and np.sum(shared_border_im)>0:
 		end_points = np.array(get_end_points(border_im, shared_border_im))
 		start_geometry = np.vstack((start_geometry, end_points))
 		target_geometry = np.vstack((target_geometry, end_points))
@@ -132,8 +139,8 @@ def warp(parts, rs, im, im_seg, final, s):
 	triangulation_corners = tri.triangulate_scipy(pts2_corners)
 
 	# tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
-	warped = trans.get_midshape_interp(im/255, pts1, pts2, triangulation)
-	warped_corners = trans.get_midshape_interp(im/255, pts1_corners, pts2_corners, triangulation_corners)
+	warped = trans.get_midshape_interp(im, pts1, pts2, triangulation)
+	warped_corners = trans.get_midshape_interp(im, pts1_corners, pts2_corners, triangulation_corners)
 	return warped, warped_corners
 
 def homunculize_parts(parts, rs, im, im_seg, final, s=11): 
@@ -160,56 +167,84 @@ def homunculize_parts(parts, rs, im, im_seg, final, s=11):
 	final = blend_stack(warped_corners, final, mask, 3, 45, 15, lap_mult=4, blur_mult=1, mask_kernal=25, mask_sigma=5)/4
 	return final
 
-joe_name = "yarden"
-joe = skio.imread(f"cropped_photos/{joe_name}_cropped.jpg")
-# joe = skio.imread("original_photos/tom_cruise.jpg")
-segs = skio.imread(f"segmentations/{joe_name}_segmentation.png", as_gray=True)
+if __name__ == "__main__":
+	joe_name = "olivia"
+	joe = skio.imread(f"cropped_photos/{joe_name}_cropped.jpg")/255
+	# joe = skio.imread("original_photos/tom_cruise.jpg")
+	segs = skio.imread(f"segmentations/{joe_name}_segmentation.png", as_gray=True)
+	face_points = fp.get_face_points(joe_name)
 
-final = np.ones_like(joe).astype(float)
+	part_sets = [
+	{"name": "left_eye", "edge_index": 54, "center_index": (153,159), "warp_func": lambda r: r**0.5},
+	{"name": "right_eye", "edge_index": 284, "center_index": (386,380), "warp_func": lambda r: r**0.5},
+	{"name": "mouth", "edge_index": 361, "center_index": (13,14), "warp_func": lambda r: (0.05**r-1)/(0.05-1)},
+	]
+	full_face_warped, full_face_warped_corners = CircleWarper.pipeline_transform(joe, part_sets, face_points)
+	#full_face_warped_corners = utils.read_im("yarden_face_warp.jpg")
 
-parts = [bpt.construct_torso(segs),
-		bpt.construct_right_forearm(segs), 
-		bpt.construct_right_upper_arm(segs),
-		bpt.construct_left_forearm(segs), 
-		bpt.construct_left_upper_arm(segs),
-		bpt.construct_left_thigh(segs),
-		bpt.construct_right_thigh(segs),
-		bpt.construct_head(segs)
-		]
-rs = [-15 for _ in parts]
-rs[0] = -30
-rs[-1] = 50
-final = homunculize_parts(parts, rs, joe, segs, final, s=8)
-utils.show_image(final)
+	utils.show_image(joe)
+	utils.save_im(f"{joe_name}_face_warp.jpg", full_face_warped_corners, clip=True)
+	joe = full_face_warped_corners
+	utils.show_image(joe)
+	final = np.ones_like(joe).astype(float)
 
-parts = [bpt.construct_left_thigh(segs), 
-		bpt.construct_left_calf(segs),
-		bpt.construct_left_foot(segs)]
-rs = [-15 for _ in parts]
-rs[-1] = 20
-final = homunculize_parts(parts, rs, joe, segs, final, s=12)
+	head = bpt.construct_head(segs)
+	#head.general_points = face_points.astype(int)
+	head.border_points = {}
 
-parts = [bpt.construct_right_thigh(segs), 
-		bpt.construct_right_calf(segs),
-		bpt.construct_right_foot(segs)]
-rs = [-15 for _ in parts]
-rs[-1] = 20
-final = homunculize_parts(parts, rs, joe, segs, final, s=12)
+	# full_face_warped <-- pre stretch in facewarp using facepoints 
+	# (hold y's above a horizontal line fixed, and drag the rest down linearly)
+	# then magnify 
 
-parts = [bpt.construct_left_forearm(segs), 
-		bpt.construct_left_hand(segs)]
-rs = [-15, 75]
-final = homunculize_parts(parts, rs, joe, segs, final, s=7)
+	parts = [head]
+	rs = [100]
+	final = homunculize_parts(parts, rs, joe, segs, final, s=8)
+	utils.show_image(final)
+	assert(False)
 
-parts = [bpt.construct_right_forearm(segs), 
-		bpt.construct_right_hand(segs)]
-rs = [-15, 75]
-final = homunculize_parts(parts, rs, joe, segs, final, s=7)
+	parts = [bpt.construct_torso(segs),
+			bpt.construct_right_forearm(segs), 
+			bpt.construct_right_upper_arm(segs),
+			bpt.construct_left_forearm(segs), 
+			bpt.construct_left_upper_arm(segs),
+			bpt.construct_left_thigh(segs),
+			bpt.construct_right_thigh(segs),
+			head
+			]
+	rs = [-15 for _ in parts]
+	rs[0] = -30
+	rs[-1] = 50
+	final = homunculize_parts(parts, rs, joe, segs, final, s=8)
+	utils.show_image(final)
 
-# head_bpt = bpt.construct_head(segs)
-# parts = [head_bpt]
-# rs = [75]
-# final = homunculize_parts(parts, rs, joe, segs, final, s=50)
-utils.show_image(joe)
-utils.show_image(final)
-utils.save_im(f"{joe_name}_homunculized.jpg", final)
+	parts = [bpt.construct_left_thigh(segs), 
+			bpt.construct_left_calf(segs),
+			bpt.construct_left_foot(segs)]
+	rs = [-15 for _ in parts]
+	rs[-1] = 20
+	final = homunculize_parts(parts, rs, joe, segs, final, s=12)
+
+	parts = [bpt.construct_right_thigh(segs), 
+			bpt.construct_right_calf(segs),
+			bpt.construct_right_foot(segs)]
+	rs = [-15 for _ in parts]
+	rs[-1] = 20
+	final = homunculize_parts(parts, rs, joe, segs, final, s=12)
+
+	parts = [bpt.construct_left_forearm(segs), 
+			bpt.construct_left_hand(segs)]
+	rs = [-15, 75]
+	final = homunculize_parts(parts, rs, joe, segs, final, s=7)
+
+	parts = [bpt.construct_right_forearm(segs), 
+			bpt.construct_right_hand(segs)]
+	rs = [-15, 75]
+	final = homunculize_parts(parts, rs, joe, segs, final, s=7)
+
+	# head_bpt = bpt.construct_head(segs)
+	# parts = [head_bpt]
+	# rs = [75]
+	# final = homunculize_parts(parts, rs, joe, segs, final, s=50)
+	utils.show_image(joe)
+	utils.show_image(final)
+	utils.save_im(f"{joe_name}_homunculized.jpg", final)

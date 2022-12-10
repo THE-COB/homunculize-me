@@ -27,7 +27,7 @@ def crop_head(head, im, delta=10):
 	return cropped_im, np.array([top, left, bottom-top, right-left])
 
 if __name__ == '__main__':
-	name = "olivia"
+	name = "tom"
 	joe = skio.imread(f"cropped_photos/{name}_cropped.jpg")
 	joe_segs = skio.imread(f"segmentations/{name}_segmentation.png", as_gray=True)
 
