@@ -3,6 +3,7 @@ import skimage.io as skio
 import utils
 import process_segmentation as proc
 import construct_bodypoints as bpt
+import sys
 
 def crop_head(head, im, delta=10):
 	top=np.min(head[:, 1])
@@ -27,7 +28,8 @@ def crop_head(head, im, delta=10):
 	return cropped_im, np.array([top, left, bottom-top, right-left])
 
 if __name__ == '__main__':
-	name = "tom"
+	name = "karen_small"
+	name = sys.argv[1]
 	joe = skio.imread(f"cropped_photos/{name}_cropped.jpg")
 	joe_segs = skio.imread(f"segmentations/{name}_segmentation.png", as_gray=True)
 

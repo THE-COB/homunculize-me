@@ -14,6 +14,7 @@ from scipy.spatial import ConvexHull, convex_hull_plot_2d
 import face_warp2 as face
 from face_warp2 import CircleWarper
 import face_point_parser as fp
+import sys
 
 def pts_to_im(im, pts):
 	new_im = np.zeros_like(im)
@@ -163,12 +164,15 @@ def homunculize_parts(parts, rs, im, im_seg, final, s=11):
 	# return final
 
 	mask = np.zeros_like(final)
-	mask[warped!=0] = 1
+	warped_mean = np.mean(warped, axis=2)
+	mask[(warped_mean!=0) & (warped_mean < 0.95)] = 1
+	utils.show_image(mask)
 	final = blend_stack(warped_corners, final, mask, 3, 45, 15, lap_mult=4, blur_mult=1, mask_kernal=25, mask_sigma=5)/4
 	return final
 
 if __name__ == "__main__":
-	joe_name = "olivia"
+	joe_name = "karen_small"
+	joe_name = sys.argv[1]
 	joe = skio.imread(f"cropped_photos/{joe_name}_cropped.jpg")/255
 	# joe = skio.imread("original_photos/tom_cruise.jpg")
 	segs = skio.imread(f"segmentations/{joe_name}_segmentation.png", as_gray=True)
@@ -212,6 +216,9 @@ if __name__ == "__main__":
 	final = homunculize_parts(parts, rs, joe, segs, final, s=8)
 	utils.show_image(final)
 
+	idx = np.argwhere(full_face_warped)
+	final[idx[:,0]-100, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
+
 	# parts = [bpt.construct_left_thigh(segs), 
 	# 		bpt.construct_left_calf(segs),
 	# 		bpt.construct_left_foot(segs)]
@@ -236,8 +243,8 @@ if __name__ == "__main__":
 	rs = [-15, 100]
 	final = homunculize_parts(parts, rs, joe, segs, final, s=7)
 
-	idx = np.argwhere(full_face_warped)
-	final[idx[:,0]-100, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
+	# idx = np.argwhere(full_face_warped)
+	# final[idx[:,0]-100, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
 	utils.show_image(joe)
 	utils.show_image(final)
 	utils.save_im(f"{joe_name}_homunculized.jpg", final)
