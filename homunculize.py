@@ -15,6 +15,7 @@ import face_warp2 as face
 from face_warp2 import CircleWarper
 import face_point_parser as fp
 import sys
+from process_segmentation import get_part_by_name
 
 def pts_to_im(im, pts):
 	new_im = np.zeros_like(im)
@@ -29,7 +30,7 @@ def get_end_points(border, shared_border):
 	end_points = np.argwhere(bpt.find_border(shared_border, nonshared_border))
 	return [end_points[0], end_points[-1]]
 
-def single_seg_geometry(im, border, shared_border, r, sparsity, keep_endpoints=False):
+def single_seg_geometry(im, border, shared_border, r, adjacent_segs, sparsity, keep_endpoints=False):
 	border_im = pts_to_im(im, border)
 	try:
 		shared_border_im = pts_to_im(im, shared_border)
@@ -41,19 +42,17 @@ def single_seg_geometry(im, border, shared_border, r, sparsity, keep_endpoints=F
 	start_geometry = nonshared_border[hull.vertices]
 
 	target_geometry = []
-	filled_border = binary_fill_holes(border_im).astype(int)
-	blurred_border = skimage.filters.gaussian(filled_border, sigma=(3, 3), truncate=2)
+	# filled_border = binary_fill_holes(border_im).astype(int)
+	blurred_border = skimage.filters.gaussian(adjacent_segs, sigma=(3, 3), truncate=2)
 	grad_x, grad_y = np.gradient(blurred_border)
 
 	mags = []
-	i = 0 
 	for point in start_geometry:
 		dx = grad_x[int(point[0]), int(point[1])]
 		dy = grad_y[int(point[0]), int(point[1])]
 		mag = (dx**2 + dy**2)**0.5
 		mags.append(mag!=0)
 		if mag != 0:
-			i+= 1
 			dx /= mag 
 			dy /= mag 
 			target_geometry.append([int(point[0] - dx * r), int(point[1] - dy * r)])
@@ -112,21 +111,27 @@ def warp(parts, rs, im, im_seg, final, s):
 		part_border = part.general_points
 		adjacent_parts = list(part.get_borders())
 		shared_borders = np.array([])
+		adjacent_segs = get_part_by_name(im_seg, part.name)
+		for adjacent_part in adjacent_parts: 
+			adjacent_segs += get_part_by_name(im_seg, adjacent_part)
+		adjacent_segs = binary_fill_holes(adjacent_segs).astype(int)
+		# if part.name == "left_foot":
+		# 	utils.show_image(adjacent_segs)
 		for j in range(len(adjacent_parts)):
 			if j == 0:
 				shared_borders = part.get_border(adjacent_parts[j])
 			else: 
 				shared_borders = np.vstack((shared_borders, part.get_border(adjacent_parts[j])))
 		if i == 0: 
-			start_geometry, target_geometry = single_seg_geometry(im_seg, part_border, shared_borders, r, sparsity=s, keep_endpoints=True)
+			start_geometry, target_geometry = single_seg_geometry(im_seg, part_border, shared_borders, r, adjacent_segs, sparsity=s, keep_endpoints=True)
 		else: 
-			start, target = single_seg_geometry(im_seg, part_border, shared_borders, r, sparsity=s)
+			start, target = single_seg_geometry(im_seg, part_border, shared_borders, r, adjacent_segs, sparsity=s)
 			start_geometry = np.vstack((start, start_geometry))
 			target_geometry = np.vstack((target, target_geometry))
 	
 	# plt.imshow(im_seg)
-	# plt.scatter(start_geometry[:,1], start_geometry[:,0], s=5, c="r")
-	# plt.scatter(target_geometry[:,1], target_geometry[:,0], s=5, c="b")
+	# utils.scatter_pts(start_geometry, annotate=True)
+	# utils.scatter_pts(target_geometry, annotate=True)
 	# plt.show()
 
 	pts1 = np.fliplr(start_geometry)
@@ -217,6 +222,7 @@ if __name__ == "__main__":
 	idx = np.argwhere(full_face_warped)
 	final[idx[:,0]-100, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
 
+	# ACTUALLY DON"T UNCOMMENT 
 	# parts = [bpt.construct_left_thigh(segs), 
 	# 		bpt.construct_left_calf(segs),
 	# 		bpt.construct_left_foot(segs)]
