@@ -159,6 +159,38 @@ def get_head(im):
 	face[(left==1)|(right==1)] = 1
 	return edge_detector(face)
 
+def get_part_by_name(im, name):
+	if name == "head":
+		return get_head(im)
+	elif name == "torso":
+		return get_torso(im)
+	elif name == "right_foot":
+		return get_right_foot(im)
+	elif name == "left_foot":
+		return get_left_foot(im)
+	elif name == "left_hand":
+		return get_left_hand(im)
+	elif name == "left_forearm":
+		return get_left_forearm(im)
+	elif name == "right_forearm":
+		return get_right_forearm(im)
+	elif name == "left_upper_arm":
+		return get_left_upper_arm(im)
+	elif name == "right_upper_arm":
+		return get_right_upper_arm(im)
+	elif name == "left_thigh":
+		return get_left_thigh(im)
+	elif name == "right_thigh":
+		return get_right_thigh(im)
+	elif name == "left_calf":
+		return get_left_calf(im)
+	elif name == "right_calf":
+		return get_right_calf(im)
+	elif name == "left_foot":
+		return get_left_foot(im)
+	elif name == "right_foot":
+		return get_right_foot(im)	
+
 if __name__ == '__main__':
 	im = skio.imread("./segmentations/yarden_segmentation.png", as_gray=True)
 	utils.show_image(im)
@@ -169,5 +201,5 @@ if __name__ == '__main__':
 	# hand_arm[left_forearm==1] = 1
 	# hand_arm[left_hand==1] = 0.5
 	# utils.show_image(hand_arm)
-	utils.show_image(get_head(im))
+	utils.show_image(get_part_by_name(im, "head"))
 	get_full_body(im)
