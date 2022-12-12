@@ -166,7 +166,6 @@ def homunculize_parts(parts, rs, im, im_seg, final, s=11):
 	mask = np.zeros_like(final)
 	warped_mean = np.mean(warped, axis=2)
 	mask[(warped_mean!=0) & (warped_mean < 0.95)] = 1
-	utils.show_image(mask)
 	final = blend_stack(warped_corners, final, mask, 3, 45, 15, lap_mult=4, blur_mult=1, mask_kernal=25, mask_sigma=5)/4
 	return final
 
@@ -214,7 +213,6 @@ if __name__ == "__main__":
 	rs[-1] = 25
 	rs[-3] = 25
 	final = homunculize_parts(parts, rs, joe, segs, final, s=8)
-	utils.show_image(final)
 
 	idx = np.argwhere(full_face_warped)
 	final[idx[:,0]-100, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
@@ -235,12 +233,12 @@ if __name__ == "__main__":
 
 	parts = [bpt.construct_left_forearm(segs), 
 			bpt.construct_left_hand(segs)]
-	rs = [-15, 100]
+	rs = [-15, 200]
 	final = homunculize_parts(parts, rs, joe, segs, final, s=7)
 
 	parts = [bpt.construct_right_forearm(segs), 
 			bpt.construct_right_hand(segs)]
-	rs = [-15, 100]
+	rs = [-15, 200]
 	final = homunculize_parts(parts, rs, joe, segs, final, s=7)
 
 	# idx = np.argwhere(full_face_warped)
