@@ -10,7 +10,9 @@
 
 <body>
   <div class="container">
-    <image id="img" src="http://127.0.0.1:3000/faces/ethan_face.jpg" crossorigin="anonymous"/>
+    <input type="text" name="imageName" id="imageName" />
+    <button id="imageNameButton">select image</button>
+    <image id="img" src="http://127.0.0.1:3000/faces/tom2_face.jpg" crossorigin="anonymous"/>
     <button id="meshButton">RENDER MESH</button>
     <canvas class="output_canvas"></canvas>
     <a id="downloadElement"></a>
@@ -69,5 +71,10 @@ faceMesh.onResults(onResults);
 document.getElementById("meshButton").addEventListener("click", () => {
   faceMesh.send({image: videoElement})
 })
+function changeImage(){
+    let newSrc = document.getElementById("imageName").value;
+    document.getElementById("img").src = "http://127.0.0.1:3000/faces/" + newSrc + "_face.jpg"
+}
+document.getElementById("imageNameButton").addEventListener("click", changeImage)
 
 </script>

@@ -213,9 +213,10 @@ if __name__ == "__main__":
 	rs[-1] = 25
 	rs[-3] = 25
 	final = homunculize_parts(parts, rs, joe, segs, final, s=8)
+	utils.show_image(final)
 
 	idx = np.argwhere(full_face_warped)
-	final[idx[:,0]-100, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
+	final[idx[:,0]-40, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
 
 	# parts = [bpt.construct_left_thigh(segs), 
 	# 		bpt.construct_left_calf(segs),

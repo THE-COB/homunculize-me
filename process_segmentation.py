@@ -192,7 +192,7 @@ def get_part_by_name(im, name):
 		return get_right_foot(im)	
 
 if __name__ == '__main__':
-	im = skio.imread("./segmentations/yarden_segmentation.png", as_gray=True)
+	im = skio.imread("./segmentations/ethan_segmentation.png", as_gray=True)
 	utils.show_image(im)
 	
 	# left_hand = get_left_hand(im)
@@ -201,5 +201,6 @@ if __name__ == '__main__':
 	# hand_arm[left_forearm==1] = 1
 	# hand_arm[left_hand==1] = 0.5
 	# utils.show_image(hand_arm)
-	utils.show_image(get_part_by_name(im, "head"))
+	utils.show_image(get_part_by_name(im, "left_calf"))
+	utils.show_image(get_part_by_name(im, "right_calf"))
 	get_full_body(im)

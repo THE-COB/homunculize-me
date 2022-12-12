@@ -11,7 +11,9 @@
 
     
     </head>
-    <img id="image" src="http://127.0.0.1:3000/cropped_photos/ethan_cropped.jpg" crossorigin='anonymous'/>
+    <input type="text" name="imageName" id="imageName" />
+    <button id="imageNameButton">select image</button>
+    <img id="image" src="http://127.0.0.1:3000/cropped_photos/tom2_cropped.jpg" crossorigin='anonymous'/>
     <br>
     <input type="text" name="threshold" id="thresholdInput" placeholder="0.4" />
     <button id="segmentButton">SEGMENT</button>
@@ -82,7 +84,12 @@
             console.log(maskImageData)
             imagedata_to_image(maskImageData)
         }
+        function changeImage(){
+            let newSrc = document.getElementById("imageName").value;
+            document.getElementById("image").src = "http://127.0.0.1:3000/cropped_photos/" + newSrc + "_cropped.jpg"
+        }
         document.getElementById("segmentButton").addEventListener("click", main)
+        document.getElementById("imageNameButton").addEventListener("click", changeImage)
         
     </script>
     
