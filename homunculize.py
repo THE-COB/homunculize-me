@@ -221,7 +221,7 @@ if __name__ == "__main__":
 	utils.show_image(final)
 
 	idx = np.argwhere(full_face_warped)
-	final[idx[:,0]-40, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
+	final[idx[:,0]-0, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
 
 	# ACTUALLY DON"T UNCOMMENT 
 	# parts = [bpt.construct_left_thigh(segs), 
