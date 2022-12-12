@@ -170,6 +170,8 @@ def get_part_by_name(im, name):
 		return get_left_foot(im)
 	elif name == "left_hand":
 		return get_left_hand(im)
+	elif name == "right_hand": 
+		return get_right_hand(im)
 	elif name == "left_forearm":
 		return get_left_forearm(im)
 	elif name == "right_forearm":
