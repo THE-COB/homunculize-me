@@ -103,7 +103,7 @@ def blend_stack(im1, im2, mask, N, kernal, sigma, lap_mult=3, blur_mult=1, mask_
 		return blended
 	return blended + blend_stack(im1_blurred, im2_blurred, blurred_mask, N-1, kernal, sigma)
 
-def warp(parts, rs, im, im_seg, final, s): 
+def warp(parts, rs, im, im_seg, final, s, background): 
 	for i in range(len(parts)):
 		part = parts[i]
 		print(part.name)
@@ -146,14 +146,17 @@ def warp(parts, rs, im, im_seg, final, s):
 
 	# tri.show_triangles_scipy(joe, joe, triangulation, pts1, pts2)
 	warped = trans.get_midshape_interp(im, pts1, pts2, triangulation)
-	warped_corners = trans.get_midshape_interp(im, pts1_corners, pts2_corners, triangulation_corners)
+	if background:
+		warped_corners = trans.get_midshape_interp(im, pts1_corners, pts2_corners, triangulation_corners)
+	else:
+		warped_corners = warped
 	return warped, warped_corners
 
-def homunculize_parts(parts, rs, im, im_seg, final, s=11): 
+def homunculize_parts(parts, rs, im, im_seg, final, background=False, s=11): 
 	done = False
 	while not done:
 		try:
-			warped, warped_corners = warp(parts, rs, im, im_seg, final, s)
+			warped, warped_corners = warp(parts, rs, im, im_seg, final, s, background)
 		except np.linalg.LinAlgError as err:
 			if 'Singular matrix' in str(err):
 				print("ruh roh singular:", s)
@@ -168,6 +171,8 @@ def homunculize_parts(parts, rs, im, im_seg, final, s=11):
 	# final[indices[:,0], indices[:,1]] = warped[indices[:,0], indices[:,1]]
 	# return final
 
+	if background== True: 
+		return warped_corners
 	mask = np.zeros_like(final)
 	warped_mean = np.mean(warped, axis=2)
 	mask[(warped_mean!=0) & (warped_mean < 0.95)] = 1
@@ -177,8 +182,9 @@ def homunculize_parts(parts, rs, im, im_seg, final, s=11):
 if __name__ == "__main__":
 	joe_name = "karen_small"
 	joe_name = sys.argv[1]
-	joe = skio.imread(f"cropped_photos/{joe_name}_cropped.jpg")/255
-	# joe = skio.imread("original_photos/tom_cruise.jpg")
+	joe_cropped = skio.imread(f"cropped_photos/{joe_name}_cropped.jpg")/255
+	joe = skio.imread(f"original_photos/{joe_name}.jpg")/255
+	joe = skimage.transform.resize(joe, joe_cropped.shape)
 	segs = skio.imread(f"segmentations/{joe_name}_segmentation.png", as_gray=True)
 	face_points = fp.get_face_points(joe_name)
 
@@ -217,11 +223,12 @@ if __name__ == "__main__":
 	rs[0] = -30
 	rs[-1] = 25
 	rs[-3] = 25
-	final = homunculize_parts(parts, rs, joe, segs, final, s=8)
-	utils.show_image(final)
+	final = homunculize_parts(parts, rs, joe, segs, final, background=True, s=8)
+	# utils.show_image(final)
 
 	idx = np.argwhere(full_face_warped)
-	final[idx[:,0]-0, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
+	final[idx[:,0]-min(np.min(idx[:,0]), 100), idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
+	utils.show_image(final)
 
 	# ACTUALLY DON"T UNCOMMENT 
 	# parts = [bpt.construct_left_thigh(segs), 
@@ -241,16 +248,16 @@ if __name__ == "__main__":
 	parts = [bpt.construct_left_forearm(segs), 
 			bpt.construct_left_hand(segs)]
 	rs = [-15, 200]
-	final = homunculize_parts(parts, rs, joe, segs, final, s=7)
+	final = homunculize_parts(parts, rs, joe_cropped, segs, final, s=7)
 
 	parts = [bpt.construct_right_forearm(segs), 
 			bpt.construct_right_hand(segs)]
 	rs = [-15, 200]
-	final = homunculize_parts(parts, rs, joe, segs, final, s=7)
+	final = homunculize_parts(parts, rs, joe_cropped, segs, final, s=7)
 
 	# idx = np.argwhere(full_face_warped)
 	# final[idx[:,0]-100, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
 	utils.show_image(joe)
 	utils.show_image(final)
-	utils.save_im(f"{joe_name}_homunculized.jpg", final)
+	utils.save_im(f"{joe_name}_homunculized_w_background.jpg", final)
 
