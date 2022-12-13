@@ -80,7 +80,7 @@ class CircleWarper:
 		return final_warp, final_warp_corners
 
 if __name__ == "__main__":
-	name = "tom"
+	name = "yarden"
 	joe = skio.imread(f"cropped_photos/{name}_cropped.jpg")/255
 	face_points = fp.get_face_points(name)
 

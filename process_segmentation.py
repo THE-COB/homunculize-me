@@ -138,12 +138,26 @@ def get_right_calf(im):
 	return right_thigh_edges
 
 def get_left_foot(im):
-	left_foot = get_body_part_mask(im, 22)
-	left_foot = edge_detector(left_foot)
+	all_lefts = get_body_part_mask(im, 22)
+	all_rights = get_body_part_mask(im, 23)
+	all_feet = np.zeros_like(all_lefts)
+	all_feet[(all_lefts == 1) | (all_rights == 1)] = 1
+	left_foot = np.zeros_like(all_feet)
+	all_feet_edges = edge_detector(all_feet)
+	left_inds, right_inds = segment_clusters_by_x(all_feet_edges)
+	left_foot[left_inds[:,0], left_inds[:,1]] = 1
 	return left_foot
 
 def get_right_foot(im):
-	return edge_detector(get_body_part_mask(im, 23))
+	all_lefts = get_body_part_mask(im, 22)
+	all_rights = get_body_part_mask(im, 23)
+	all_feet = np.zeros_like(all_lefts)
+	all_feet[(all_lefts == 1) | (all_rights == 1)] = 1
+	right_foot = np.zeros_like(all_feet)
+	all_feet_edges = edge_detector(all_feet)
+	left_inds, right_inds = segment_clusters_by_x(all_feet_edges)
+	right_foot[right_inds[:,0], right_inds[:,1]] = 1
+	return right_foot
 
 def get_torso(im):
 	front = get_body_part_mask(im, 12)
@@ -194,7 +208,7 @@ def get_part_by_name(im, name):
 		return get_right_foot(im)	
 
 if __name__ == '__main__':
-	im = skio.imread("./segmentations/ethan_segmentation.png", as_gray=True)
+	im = skio.imread("./segmentations/yarden_segmentation.png", as_gray=True)
 	utils.show_image(im)
 	
 	# left_hand = get_left_hand(im)
@@ -203,6 +217,6 @@ if __name__ == '__main__':
 	# hand_arm[left_forearm==1] = 1
 	# hand_arm[left_hand==1] = 0.5
 	# utils.show_image(hand_arm)
-	utils.show_image(get_part_by_name(im, "left_calf"))
-	utils.show_image(get_part_by_name(im, "right_calf"))
+	utils.show_image(get_part_by_name(im, "left_foot"))
+	utils.show_image(get_part_by_name(im, "right_foot"))
 	get_full_body(im)

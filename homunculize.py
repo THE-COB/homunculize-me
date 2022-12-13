@@ -37,7 +37,7 @@ def single_seg_geometry(im, border, shared_border, r, adjacent_segs, sparsity, k
 	except:
 		shared_border_im = np.zeros_like(im)
 	nonshared_border = im_to_pts(border_im - shared_border_im)
-	start_geometry = nonshared_border[::int(nonshared_border.shape[0]/sparsity)]
+	#start_geometry = nonshared_border[::int(nonshared_border.shape[0]/sparsity)]
 	hull = ConvexHull(nonshared_border)
 	start_geometry = nonshared_border[hull.vertices]
 
@@ -231,7 +231,6 @@ if __name__ == "__main__":
 	rs[-1] = 25
 	rs[-3] = 25
 	final = homunculize_parts(parts, rs, joe, segs, final, background=True, s=8)
-	# utils.show_image(final)
 
 	idx = np.argwhere(full_face_warped)
 	y_coord = idx[:,0]-max(np.min(idx[:,0]), 100)
@@ -275,5 +274,5 @@ if __name__ == "__main__":
 	# final[idx[:,0]-100, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
 	utils.show_image(joe)
 	utils.show_image(final)
-	utils.save_im(f"{joe_name}_homunculized_w_background.jpg", final)
+	utils.save_im(f"{joe_name}_homunculized_w_background.jpg", final, clip=True)
 

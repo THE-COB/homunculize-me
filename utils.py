@@ -5,7 +5,7 @@ import os
 from skimage.transform import rescale
 
 def scatter_pts(pts, annotate=False):
-	plt.scatter(pts[:,1], pts[:,0])
+	plt.scatter(pts[:,1], pts[:,0], s=5)
 	if annotate:
 		for i in range(len(pts)):
 			plt.annotate(str(i), (pts[i,1], pts[i,0]))
