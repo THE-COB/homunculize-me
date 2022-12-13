@@ -184,7 +184,14 @@ if __name__ == "__main__":
 	joe_name = sys.argv[1]
 	joe_cropped = skio.imread(f"cropped_photos/{joe_name}_cropped.jpg")/255
 	joe = skio.imread(f"original_photos/{joe_name}.jpg")/255
-	joe = skimage.transform.resize(joe, joe_cropped.shape)
+	if joe.shape[0]*joe.shape[1] > joe_cropped.shape[0]*joe_cropped.shape[1]:
+		joe = skimage.transform.resize(joe, joe_cropped.shape)
+	elif joe.shape[0]*joe.shape[1] < joe_cropped.shape[0]*joe_cropped.shape[1]:
+		new_joe = np.ones_like(joe_cropped)
+		d_width = joe_cropped.shape[0] - joe.shape[0]
+		d_height = joe_cropped.shape[1] - joe.shape[1]
+		new_joe[d_width//2:joe.shape[0]+d_width//2, d_height//2:joe.shape[1]+d_height//2, :] = joe
+		joe = new_joe
 	segs = skio.imread(f"segmentations/{joe_name}_segmentation.png", as_gray=True)
 	face_points = fp.get_face_points(joe_name)
 
@@ -227,7 +234,16 @@ if __name__ == "__main__":
 	# utils.show_image(final)
 
 	idx = np.argwhere(full_face_warped)
-	final[idx[:,0]-min(np.min(idx[:,0]), 100), idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
+	y_coord = idx[:,0]-max(np.min(idx[:,0]), 100)
+	if np.max(y_coord) < np.mean(head_points[:,0]):
+		diff = np.max(idx[:,0]) - round(np.max(head_points[:,0])*0.75 + np.max(above_neck[:,0])*0.25)
+		y_coord = idx[:,0] - diff
+
+	headed_final = np.copy(final)
+	mask = np.zeros_like(final)
+	mask[y_coord, idx[:,1]] = 1
+	headed_final[y_coord, idx[:,1]] = full_face_warped[idx[:,0], idx[:,1]]
+	final = blend_stack(headed_final, final, mask, 3, 45, 15, lap_mult=4, blur_mult=1, mask_kernal=25, mask_sigma=5)/4
 	utils.show_image(final)
 
 	# ACTUALLY DON"T UNCOMMENT 
