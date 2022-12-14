@@ -211,12 +211,12 @@ if __name__ == '__main__':
 	im = skio.imread("./segmentations/yarden_segmentation.png", as_gray=True)
 	utils.show_image(im)
 	
-	# left_hand = get_left_hand(im)
+	left_hand = get_left_hand(im)
 	# left_forearm = get_left_forearm(im)
 	# hand_arm = np.zeros_like(left_hand)
 	# hand_arm[left_forearm==1] = 1
 	# hand_arm[left_hand==1] = 0.5
 	# utils.show_image(hand_arm)
-	utils.show_image(get_part_by_name(im, "left_foot"))
-	utils.show_image(get_part_by_name(im, "right_foot"))
-	get_full_body(im)
+	# utils.show_image(get_part_by_name(im, "left_foot"))
+	# utils.show_image(get_part_by_name(im, "right_foot"))
+	# get_full_body(im)
